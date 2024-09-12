@@ -22,7 +22,7 @@ def check_server_status():
     while True:
         for server in servers:
             try:
-                # Tenta se conectar ao servidor com um timeout de 5s
+                # Tenta se conectar ao servidor com um timeout de 5s de espera pela resposta
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     s.settimeout(5)
                     s.connect(server)
@@ -44,6 +44,7 @@ def check_server_status():
         time.sleep(CHECK_INTERVAL)
 
 # Encaminha a requisição do cliente para um servidor específico que esteja disponível
+# Conexão entre o balanceador e o servidor
 # server_address = (endereço IP, porta)
 def forward_request_to_server(server_address, client_message):
     try:
@@ -53,13 +54,14 @@ def forward_request_to_server(server_address, client_message):
             s.connect(server_address)
             print(f"Forwarding message to server: '{client_message}'")
             s.sendall(client_message.encode())
-            response = s.recv(1024)
-            return response.decode()
+            response = s.recv(1024).decode()
+            return response
     except (socket.timeout, socket.error) as e:
         print(f"Failed to connect to server {server_address}: {e}")
         return None
 
 # Inicia o balanceador de carga
+# Conexão entre o balanceador e o cliente
 def start_load_balancer():
 
     # Inicia uma nova thread que executa a função check_server_status em segundo plano
@@ -78,12 +80,12 @@ def start_load_balancer():
             # Quando um cliente tentar se conectar ao balanceador, a conexão será aceita 
             # E retorna um socket específico para a comunicação entre os dois 
             # (também retorna o endereço IP e porta do cliente que se conectou)
-            client_socket, _ = balancer_socket.accept()
+            conn, _ = balancer_socket.accept()
 
-            with client_socket:
+            with conn:
 
                 # Lê a mensagem do cliente
-                client_message = client_socket.recv(1024).decode()
+                client_message = conn.recv(1024).decode()
                 print(f"Received message from client: {client_message}")
 
                 # Verifica quais servidores estão disponíveis para processar a requisição do cliente
@@ -93,9 +95,9 @@ def start_load_balancer():
                         avaiable_servers.append(server)
 
                 if len(avaiable_servers) == 0: # Todos os servidores estão indisponíveis
-                    client_socket.sendall("No avaiable servers now. Try again later.".encode())
-                    print("All server are unavailable.")
-                    continue # Espera por uma nova conexão de cliente
+                    conn.sendall("No avaiable servers now. Try again later.".encode())
+                    # O balanceador continua rodando, esperando os servidores voltarem a ficar disponíveis e esperando por novas conexões de cliente
+                    continue
                 
                 # Seleciona um servidor de forma aleatória para encaminhar a mensagem do cliente
                 server = random.choice(avaiable_servers)
@@ -106,10 +108,10 @@ def start_load_balancer():
 
                 # Se houver uma resposta válida (diferente de none), envia-a ao cliente, caso contrário, envia uma mensagem de erro
                 if response: 
-                    client_socket.sendall(response.encode())
+                    conn.sendall(response.encode())
                     print(f"Forwarded response to client: {response}")
                 else: 
-                    client_socket.sendall("Failed to connect to the server.".encode())
+                    conn.sendall("Failed to connect to the server.".encode())
                     print(f"Failed to get a response from the server {server}")
     
 if __name__ == "__main__":
