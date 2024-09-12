@@ -10,7 +10,7 @@ fun main() {
         escolhe um dos servidores do conjunto que esteja disponível para atender a requisição.
     */
 
-    val balancerAddres = "127.0.0.1" // Endereço IP do balanceador de carga
+    val balancerAddress = "127.0.0.1" // Endereço IP do balanceador de carga
     val balancerPort = 4000 // Porta na qual o balanceador está escutando
     val message = "Hello"
 
@@ -19,7 +19,7 @@ fun main() {
         // Cria uma conexão TCP entre o cliente e o balanceador de carga
         // Garante que o socket será fechado automaticamente após o bloco de código ser executado, mesmo se ocorrer uma exceção
         // Pega o socket recém-criado como argumento de entrada da lambda e usa esse socket dentro do bloco de código da lambda para enviar e receber dados
-        Socket(balancerAddres, balancerPort).use { socket ->
+        Socket(balancerAddress, balancerPort).use { socket ->
 
             // Permite que o cliente envie mensagens ao balanceador pelo 'fluxo' de saída do socket
             val outputWriter = PrintWriter(socket.getOutputStream())
