@@ -18,8 +18,15 @@ def send_request_to_server(server_address, message, response_queue):
 def client_request(servers, message):
     responses = []
     threads = []
-    
+
     for server in servers:
+        send_request_to_server(server, message, responses)
+        if responses:
+            return responses[0]  
+        
+    return "Nenhuma resposta recebida"
+
+"""   for server in servers:
         thread = threading.Thread(target=send_request_to_server, args=(server, message, responses))
         thread.start()
         threads.append(thread)
@@ -31,12 +38,12 @@ def client_request(servers, message):
         return responses[0]  
     else:
         return "Nenhuma resposta recebida"
-
+ """
 if __name__ == "__main__":
-    servers = [('localhost', 65432), ('localhost', 65433)]
+    servers = [('localhost', 65432), ('localhost', 65433), ('localhost', 65434)]
     message = "Hello"
-    print(f"Enviando {message}")
     while True:
+        print(f"Enviando {message}")
         response = client_request(servers, message)
         print(f"Resposta recebida: {response}")
         time.sleep(3)
