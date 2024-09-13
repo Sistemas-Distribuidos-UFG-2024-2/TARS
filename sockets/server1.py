@@ -18,7 +18,7 @@ def start_server(port):
                 print(f"Received message: '{message}' on port {port}")
                 
                 if message == "Hello":
-                    conn.sendall("word".encode())
+                    conn.sendall("world".encode())
                     print(f"Responded with 'world' on port {port}")
                 elif message == "PING":
                     conn.sendall("PONG".encode())
