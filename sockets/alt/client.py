@@ -1,5 +1,6 @@
 import socket
 import threading
+import time
 
 def send_request_to_server(server_address, message, response_queue):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
@@ -35,5 +36,7 @@ if __name__ == "__main__":
     servers = [('localhost', 65432), ('localhost', 65433)]
     message = "Hello"
     print(f"Enviando {message}")
-    response = client_request(servers, message)
-    print(f"Resposta recebida: {response}")
+    while True:
+        response = client_request(servers, message)
+        print(f"Resposta recebida: {response}")
+        time.sleep(3)
