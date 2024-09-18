@@ -3,6 +3,9 @@ import threading
 import time
 import random
 
+# O Health Check atua como um servidor e fica aguardando o balanceador (age como cliente) se conectar para solicitar informações
+# O Health Check atua como cliente para os servidores, para verificar se estão ativos
+
 # Lista (tupla) de servidores
 servers = [
     ('127.0.0.1', 5001), # Servidor 1
@@ -18,6 +21,7 @@ server_status = {server: False for server in servers}
 CHECK_INTERVAL = 5
 
 # Função que verifica periodicamente o estado dos servidores
+# Essa função roda em uma thread separada, verificando servidores de forma assíncronas, sem bloquear outras partes
 # Health Check -> Servidores
 def check_server_health():
     # Verifica continuamento o estado dos servidores em um loop infinito
@@ -45,7 +49,8 @@ def check_server_health():
         # Pausa após verificar todos os servidores antes de repetir o processo
         time.sleep(CHECK_INTERVAL)
 
-# Função que atende (responde) o balanceador quando solicitado e fornece servidores ativos
+# Função que atende (responde) o balanceador quando solicitada e fornece servidores ativos
+# Fica na thread principal
 # Health Check -> Balanceador
 def answer_balancer():
 
@@ -54,9 +59,10 @@ def answer_balancer():
         hc_socket.listen()
         print("Health Check service running on port 7000")
         
+        # Espera o balanceador se conectar com ele
         while True:
             
-            # Espera o balanceador se conectar com ele
+            # Aceita a conexão do balanceador
             conn, _ = hc_socket.accept()
             
             with conn:

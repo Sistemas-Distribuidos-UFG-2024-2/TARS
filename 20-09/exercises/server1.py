@@ -8,12 +8,14 @@ from ideal_weight import define_ideal_weight
 def handle_request(conn, port):
     with conn:
         try:
-
             client_message = conn.recv(1024).decode().strip()
 
-            if client_message == "CHECK": # Mensagem do Health Check
+            # Mensagem do Health Check
+            if client_message == "CHECK":
                 conn.sendall("OK".encode())
-            else:
+
+            # Mensagem do cliente 
+            else: 
                 print(f"Received message: '{client_message}' on port {port}")
 
                 # Separando os dados da mensagem, espera receber nesse formato altura:sexo
@@ -37,12 +39,14 @@ def handle_request(conn, port):
             conn.sendall(f"Server error: {e}".encode)
 
 # Conexão entre o balanceador e o servidor, escuta múltiplas conexões
+# Balanceador -> Servidor
 def start_server(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
         server_socket.bind(('127.0.0.1', port))
         server_socket.listen()
         print(f'Server is running on port: {port}')
 
+        # Espera o balanceador se conectar
         while True:
 
             conn, _ = server_socket.accept()
@@ -52,4 +56,3 @@ def start_server(port):
 
 if __name__ == "__main__":
     start_server(5001)  # Porta do servidor 1
-                

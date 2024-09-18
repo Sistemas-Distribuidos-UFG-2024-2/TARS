@@ -1,7 +1,7 @@
 import socket 
 import threading
 
-# Ideia: Escuta conexões dos clientes, cria uma nova thread para cada cliente e consulta o serviço de health check para encaminhar a requisição do cliente para um servidor disponível
+# Ideia: Recebe conexões dos clientes, cria uma nova thread para cada cliente e consulta o serviço de health check para encaminhar a requisição do cliente para um servidor disponível
 # O balanceador pode processar várias requisições (clientes) ao mesmo tempo, sem que uma requisição bloqueie a outra
 
 
@@ -11,28 +11,31 @@ def get_active_servers():
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect(('127.0.0.1', 7000))
+
             # Recebe mensagem do health check
             server_info = s.recv(1024).decode()
 
             if "No available servers" in server_info:
-                print("No active servers available now")
+                print("No active servers now")
                 return None
             else: 
                 host, port = server_info.split(':')
-                return (host, int(port))
+                return (host, int(port)) # Servidor ativo
+            
     except(socket.timeout, socket.error) as e:
         print(f"Failed to connect to health check: {e}")
         return None
 
-# Função que lida com a comunicação com cada cliente de forma independente
-# Balanceador -> Servidor disponível
+# Função que lida com a conexão de cada cliente de forma independente (cada chamada dessa função é executada em uma thread separada)
+# Balanceador -> Servidor disponível -> Balanceador -> Cliente
 def handle_client(conn):
     with conn:
+
         # Recebe a mensagem do cliente
         client_message = conn.recv(1024).decode()
         print(f"Received message from client: {client_message}")
 
-        # Consulta os servidores disponíveis
+        # Consulta o health check para obter um servidor ativo
         available_server = get_active_servers()
 
         # Todos os servidores estão indisponíveis, encerra a conexão e não executa o restante do código
@@ -55,7 +58,6 @@ def handle_client(conn):
                 conn.sendall(f"Failed to connect to server.".encode())
                 print(f"Failed to get a response from the server {available_server}:{e}")
 
-# Inicia o balanceador de carga
 # Ideia: para cada nova conexão cliente, cria uma thread separada que será responsável por processar a requisição do cliente
 # Cliente -> Balanceador
 def start_load_balancer():
@@ -66,7 +68,7 @@ def start_load_balancer():
         balancer_socket.listen()
         print("Load Balancer started on port 4000")
 
-        # Loop infinito para aceitar e processar conexões
+        # Loop infinito para aceitar e processar conexões de cliente
         while True:
 
             # Quando um cliente tentar se conectar ao balanceador, a conexão será aceita 
