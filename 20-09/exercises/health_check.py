@@ -68,8 +68,7 @@ def answer_balancer():
                     
             
                 if available_servers:
-                    print(f"Available servers: {available_servers}") # TODO: TIRAR
-
+                    print(f"Available servers: {available_servers}")
                     # Se houver servidores disponíveis, escolhe um aleatório para responder
                     selected_server = random.choice(available_servers)
                     print(f"Selected server: {selected_server}")

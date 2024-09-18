@@ -9,9 +9,21 @@ fun main() {
 
     val balancerAddress = "127.0.0.1" // Endereço IP do balanceador de carga
     val balancerPort = 4000 // Porta na qual o balanceador está escutando
-    val message = "Hello"
 
     try {
+
+        print("Digite sua altura (em metros): ")
+        val height = readLine()?.trim()
+        print("Digite seu sexo (F/M): ")
+        val gender = readLine()?.trim()
+
+        if(height.isNullOrEmpty() || gender.isNullOrEmpty()) {
+            println("Por favor, preencha todos os campos.")
+            return
+        } 
+
+        // Formata a mensagem para ficar no formato altura:sexo
+        val message = "$height:$gender"
 
         // Cria uma conexão TCP entre o cliente e o balanceador de carga
         // Garante que o socket será fechado automaticamente após o bloco de código ser executado, mesmo se ocorrer uma exceção
