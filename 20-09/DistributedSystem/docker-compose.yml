@@ -1,0 +1,72 @@
+﻿services:
+  redis-stack:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    
+  healthcheck:
+    image: healthcheck
+    build:
+      context: .
+      dockerfile: HealthCheck/Dockerfile
+    ports:
+      - "5197:8080"
+    depends_on:
+      - redis-stack
+
+  client:
+    image: client
+    build:
+      context: .
+      dockerfile: Client/Dockerfile
+    environment:
+      HealthCheck__BaseAddress: "http://healthcheck:8080"
+      HealthCheck__Timeout: 10
+    ports:
+      - "5268:8080"
+    depends_on:
+      - healthcheck
+
+  server_0:
+    image: server
+    build:
+      context: .
+      dockerfile: Server/Dockerfile
+    environment:
+      SELF_URL: "http://server_0:8080"
+      HealthCheck__BaseAddress: "http://healthcheck:8080"
+      HealthCheck__Timeout: 10
+    ports:
+      - "5132:8080"
+    depends_on:
+      - healthcheck
+  
+  server_1:
+    image: server
+    build:
+      context: .
+      dockerfile: Server/Dockerfile
+    environment:
+      SELF_URL: "http://server_1:8080"
+      HealthCheck__BaseAddress: "http://healthcheck:8080"
+      HealthCheck__Timeout: 10
+    ports:
+      - "5133:8080"
+    depends_on:
+      - healthcheck
+
+  server_2:
+    image: server
+    build:
+      context: .
+      dockerfile: Server/Dockerfile
+    environment:
+      SELF_URL: "http://server_2:8080"
+      HealthCheck__BaseAddress: "http://healthcheck:8080"
+      HealthCheck__Timeout: 10
+    ports:
+      - "5134:8080"
+    depends_on:
+      - healthcheck
+  
