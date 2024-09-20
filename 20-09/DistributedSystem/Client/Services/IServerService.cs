@@ -1,6 +1,8 @@
+using Common;
+
 namespace Client.Services;
 
 public interface IServerService
 {
-    Task<string?> GetServerResponse();
+    Task<SumResponse?> GetServerResponse(SumRequest request);
 }

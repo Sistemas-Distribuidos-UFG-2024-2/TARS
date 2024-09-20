@@ -1,3 +1,6 @@
+using System.Text.Json;
+using Common;
+using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using Server.Extensions;
 using Server.Services;
@@ -39,7 +42,11 @@ app.MapGet("/", () => TypedResults.Ok())
     .WithName("Home")
     .WithOpenApi();
 
-app.MapGet("/receive", () => Results.Ok("Hello World!"))
+app.MapPost("/receive", ([FromBody] SumRequest request) =>
+    {
+        var response = new SumResponse(request.A + request.B);
+        return TypedResults.Ok(response);
+    })
     .WithName("Receive")
     .WithOpenApi();
 

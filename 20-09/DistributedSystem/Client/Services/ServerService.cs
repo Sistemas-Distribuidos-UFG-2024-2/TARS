@@ -1,3 +1,6 @@
+using System.Text;
+using System.Text.Json;
+using Common;
 using Common.Extensions;
 
 namespace Client.Services;
@@ -8,14 +11,15 @@ public class ServerService : IServerService
     private readonly IHealthCheckService _healthCheckService;
     private readonly ILogger<ServerService> _logger;
 
-    public ServerService(IHttpClientFactory httpClientFactory, IHealthCheckService healthCheckService, ILogger<ServerService> logger)
+    public ServerService(IHttpClientFactory httpClientFactory, IHealthCheckService healthCheckService,
+        ILogger<ServerService> logger)
     {
         _httpClientFactory = httpClientFactory;
         _healthCheckService = healthCheckService;
         _logger = logger;
     }
 
-    public async Task<string?> GetServerResponse()
+    public async Task<SumResponse?> GetServerResponse(SumRequest request)
     {
         try
         {
@@ -28,10 +32,13 @@ public class ServerService : IServerService
 
             var index = Random.Shared.Next(0, healthyServers.Length - 1);
             using var client = _httpClientFactory.CreateClient("server");
-            
-            using var response = await client.SendRequestAsync(healthyServers[index] + "/receive", HttpMethod.Get);
 
-            return await response.Content.ReadAsStringAsync();
+            using var content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+            using var response =
+                await client.SendRequestAsync(healthyServers[index] + "/receive", HttpMethod.Post, content);
+
+            return await response.Content.ReadFromJsonAsync<SumResponse>();
         }
         catch (Exception e)
         {
