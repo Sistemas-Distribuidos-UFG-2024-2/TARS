@@ -52,6 +52,6 @@ fun main() {
     } catch (e: IOException) {
         // Captura qualquer erro encontrado durante o processo de conexão ou comunicação
         e.printStackTrace()
-        println("Failed to connect to the load balancer.")
+        println("Failed to connect to the receiver.")
     }
 }
