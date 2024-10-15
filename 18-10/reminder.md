@@ -1,8 +1,10 @@
-### Comandos - Versão em Kotlin e Python
+## 🚧 Comandos 🚧
 
-> ⚠️ Importante ter o compilador do Kotlin instalado (kotlinc)
+### Versão em Kotlin e Python
 
-1. Sockets
+> Importante ter o compilador do Kotlin instalado (kotlinc)
+
+* Sockets
 
     ```
     python3 receiver.py
