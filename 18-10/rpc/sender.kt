@@ -1,15 +1,24 @@
+// Imports para realizar conexões HTTP
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+// Imports para manipular e analisar a resposta em XML
 import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Element
 
+/**
+ * Fluxo: O cliente coleta as informações do usuário, constrói o XML com essas info e indica qual o método a ser chamado.
+ * Essa requisição é enviada para o servidor através de uma conexão HTTP. O servidor lê a requisição, executa o método 
+ * correspondente e retorna uma resposta. O cliente lê a resposta e exibe o resultado.
+ */
+
 fun main() {
     try {
+
         // Endereço do servidor XML-RPC
         val serverUrl = "http://localhost:5000"
 
-        // Solicitar altura e gênero do usuário
+        // Coleta de dados do usuário
         print("Enter your height (in meters): ")
         val heightInput = readLine()?.trim()
         val height = heightInput?.toDoubleOrNull()
@@ -25,7 +34,8 @@ fun main() {
             return
         }
 
-        // Construir a solicitação XML-RPC
+        // Construindo a requisição XML-RPC
+        // .trimIndent() -> retirar os espaços em branco comuns antes de cada linha da string, mas mantendo a estrutura hierárquica/identação de um XML
         val xmlRequest = """
             <?xml version="1.0"?>
             <methodCall>
@@ -37,27 +47,45 @@ fun main() {
             </methodCall>
         """.trimIndent()
 
-        // Configurar a conexão HTTP
+        // Configurar a conexão HTTP para enviar o XML ao servidor
+
+        // Cria um objeto URL
         val url = URL(serverUrl)
+        // Abrir conexão HTTP com o servidor da URL
+        // Casting para uma subclasse de URLConnection para enviar especificamente uma solicitação HTTP
         val connection = url.openConnection() as HttpURLConnection
+        // Método HTTP usado na requisição (requestbody)
         connection.requestMethod = "POST"
+        // Indica qual o tipo de dados que está sendo enviado no requestbody
         connection.setRequestProperty("Content-Type", "text/xml")
+        // Indica que a conexão vai enviar dados ao servidor (POST), vai escrever no output stream da conexão
         connection.doOutput = true
 
-        // Enviar a solicitação
+        // Enviar a requisição com o XML para o servidor
+
+        // Objeto OutputStreamWriter para escrever dados no fluxo de saída da conexão HTTP
         val outputStream = OutputStreamWriter(connection.outputStream)
         outputStream.write(xmlRequest)
-        outputStream.flush()
-        outputStream.close()
+        outputStream.flush() // Envio imediato dos dados
+        outputStream.close() // Libera o fluxo de saída e fecha a conexão
 
-        // Ler a resposta do servidor
+        // Ler a resposta do servidor (que também é um XML)
+
+        // Acesso ao fluxo de entrada associado à conexão
         val responseStream = connection.inputStream
+        // Analisa o XML de resposta usando o DocumentBuilderFactory e o parse() para converter o XML em um DOM (Document Object Model), estrutura manipulável
+        // O DOM é uma representação em árvore do documento XML, sendo mais fácil de navegar e extrair informações
         val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(responseStream)
+        // Padronização da estrutura e evita problemas de espaçamento
         document.documentElement.normalize()
 
-        val valueElement = document.getElementsByTagName("double").item(0) as Element
-        val idealWeight = valueElement.textContent.toDouble()
+        // Extração da informação do XML de resposta (navegar na estrutura XML procurando info)
 
+        // Acessa o primeiro elemento com a tag <double> do documento XML (como só tem um, fica mais fácil, basta pergar o primeiro)
+        // Casting para element, acesso a método para manipular esse nó do XML
+        val valueElement = document.getElementsByTagName("double").item(0) as Element
+        // Extrai o valor/conteúdo de texto do elemento <double> e converte para Double
+        val idealWeight = valueElement.textContent.toDouble()
         println("Ideal weight: %.2f kg".format(idealWeight))
 
     } catch (e: Exception) {
