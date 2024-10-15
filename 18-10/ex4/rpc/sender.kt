@@ -89,7 +89,7 @@ fun main() {
         println("Ideal weight: %.2f kg".format(idealWeight))
 
     } catch (e: Exception) {
-        e.printStackTrace()
         println("Failed to connect to the receiver.")
+        e.printStackTrace()
     }
 }
