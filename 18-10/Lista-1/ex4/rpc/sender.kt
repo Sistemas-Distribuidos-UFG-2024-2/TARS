@@ -81,7 +81,7 @@ fun main() {
 
         // Extração da informação do XML de resposta (navegar na estrutura XML procurando info)
 
-        // Acessa o primeiro elemento com a tag <double> do documento XML (como só tem um, fica mais fácil, basta pergar o primeiro)
+        // Acessa o primeiro elemento com a tag <double> do documento XML de resposta (como só tem um, fica mais fácil, basta pegar o primeiro)
         // Casting para element, acesso a método para manipular esse nó do XML
         val valueElement = document.getElementsByTagName("double").item(0) as Element
         // Extrai o valor/conteúdo de texto do elemento <double> e converte para Double

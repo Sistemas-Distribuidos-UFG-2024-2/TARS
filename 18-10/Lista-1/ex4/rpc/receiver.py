@@ -8,10 +8,8 @@ from xmlrpc.server import SimpleXMLRPCServer
 def define_ideal_weight(height, gender):
     if gender == "M":
         return (72.7 * height) - 58
-    elif gender == "F":
+    else: # F
         return (62.1 * height) - 44.7
-    else:
-        return "Invalid gender. Please provide M or F."
 
 # Configurar o servidor RPC
 def main():
