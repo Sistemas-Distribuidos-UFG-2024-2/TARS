@@ -25,7 +25,7 @@ app.MapPost("hi", async (HttpContext httpContext, IRedisService redisService) =>
 
 app.MapGet("get-healthy-servers", async (IRedisService redisService) =>
 {
-    var healthyServers = await redisService.GetSet("servers");
+    var healthyServers = await redisService.GetSet("healthy_servers");
 
     return TypedResults.Ok(healthyServers);
 });

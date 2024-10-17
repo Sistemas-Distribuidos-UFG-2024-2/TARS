@@ -85,7 +85,7 @@ public class HealthCheckBackgroundService : BackgroundService
             }
         });
 
-        await redisService.RemoveSetItems("servers", unhealthyServers.ToArray());
-        await redisService.AddSetItems("servers", healthyServers.ToArray());
+        await redisService.RemoveSetItems("healthy_servers", unhealthyServers.ToArray());
+        await redisService.AddSetItems("healthy_servers", healthyServers.ToArray());
     }
 }

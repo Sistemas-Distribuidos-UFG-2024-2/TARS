@@ -1,5 +1,24 @@
 # This is a generated file. Not intended for manual editing.
 services:
+  client:
+    build:
+      context: "/home/gustavon/Documents/grad/P8/sistemas-distribuidos/Grupo02-TARS/20-09/DistributedSystem"
+      dockerfile: "Client/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/Client.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "client:dev"
+    ports: []
+    volumes:
+    - "/home/gustavon/.nuget/packages:/home/app/.nuget/packages"
+    - "/home/gustavon/Documents/grad/P8/sistemas-distribuidos/Grupo02-TARS/20-09/DistributedSystem/Client:/app:rw"
+    - "/home/gustavon/Documents/grad/P8/sistemas-distribuidos/Grupo02-TARS/20-09/DistributedSystem:/src:rw"
+    working_dir: "/app"
   healthcheck:
     build:
       context: "/home/gustavon/Documents/grad/P8/sistemas-distribuidos/Grupo02-TARS/20-09/DistributedSystem"
@@ -17,24 +36,5 @@ services:
     volumes:
     - "/home/gustavon/.nuget/packages:/home/app/.nuget/packages"
     - "/home/gustavon/Documents/grad/P8/sistemas-distribuidos/Grupo02-TARS/20-09/DistributedSystem/HealthCheck:/app:rw"
-    - "/home/gustavon/Documents/grad/P8/sistemas-distribuidos/Grupo02-TARS/20-09/DistributedSystem:/src:rw"
-    working_dir: "/app"
-  server_0:
-    build:
-      context: "/home/gustavon/Documents/grad/P8/sistemas-distribuidos/Grupo02-TARS/20-09/DistributedSystem"
-      dockerfile: "Server/Dockerfile"
-      target: "base"
-    command: []
-    entrypoint:
-    - "dotnet"
-    - "/app/bin/Debug/net8.0/Server.dll"
-    environment:
-      ASPNETCORE_ENVIRONMENT: "Development"
-      DOTNET_USE_POLLING_FILE_WATCHER: "true"
-    image: "server:dev"
-    ports: []
-    volumes:
-    - "/home/gustavon/.nuget/packages:/home/app/.nuget/packages"
-    - "/home/gustavon/Documents/grad/P8/sistemas-distribuidos/Grupo02-TARS/20-09/DistributedSystem/Server:/app:rw"
     - "/home/gustavon/Documents/grad/P8/sistemas-distribuidos/Grupo02-TARS/20-09/DistributedSystem:/src:rw"
     working_dir: "/app"

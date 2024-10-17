@@ -16,7 +16,7 @@
       - redis-stack
 
   client:
-    image: client
+    image: client:dev
     build:
       context: .
       dockerfile: Client/Dockerfile
