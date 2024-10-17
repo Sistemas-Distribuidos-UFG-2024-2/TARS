@@ -1,8 +1,8 @@
 ## 🚧 Comandos 🚧
 
-### Versão em Kotlin e Python
+> Importante ter o compilador do Kotlin (kotlinc) e Python3 instalados
 
-> Importante ter o compilador do Kotlin instalado (kotlinc)
+### Versão em Kotlin e Python
 
 * Sockets
 
@@ -18,4 +18,14 @@
     python3 receiver.py
     kotlinc sender.kt -cp libs/xmlrpc-client-3.1.3.jar:libs/commons-logging-1.2.jar:libs/xmlrpc-common-3.1.3.jar -d sender.jar
     kotlin -cp libs/xmlrpc-client-3.1.3.jar:libs/commons-logging-1.2.jar:libs/xmlrpc-common-3.1.3.jar:sender.jar SenderKt
+    ```
+
+### Versão somente em Python
+
+* RMI
+
+    ```
+    python3 -m Pyro5.nameserver
+    python3 receiver.py
+    python3 sender.py
     ```
