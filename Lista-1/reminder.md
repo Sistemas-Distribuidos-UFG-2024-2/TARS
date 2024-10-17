@@ -12,7 +12,7 @@
     java -jar sender.jar
     ```
 
-* RCP
+* RPC
 
     ```
     python3 receiver.py
@@ -23,6 +23,8 @@
 ### Versão somente em Python
 
 * RMI
+
+> O primeiro comando é responsável por iniciar o servidor de nomes do Pyro5
 
     ```
     python3 -m Pyro5.nameserver
