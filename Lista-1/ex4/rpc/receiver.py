@@ -18,8 +18,8 @@ def main():
     server = SimpleXMLRPCServer(("localhost", 5000))
     print("XML-RPC Server started on port 5000")
 
-    # Registrar a função no servidor para que o cliente possa chamá-la por XML-RPC
-    # Associa o nome usado no XML pelo cliente com a função real
+    # Registrar a função no servidor para que o cliente possa chamá-la remotamente por XML-RPC
+    # Associa o nome da função usado no XML pelo cliente com a função real
     server.register_function(define_ideal_weight, "define_ideal_weight")
 
     # Manter o servidor rodando por tempo indeterminado

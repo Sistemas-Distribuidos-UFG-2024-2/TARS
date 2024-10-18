@@ -16,7 +16,7 @@ class IdealWeightCalculator():
 def main():
 
     # Daemon: gerencia comunicação entre cliente e servidor, escuta as requisições e invoca os métodos apropriados
-    # Inicia o daemon Pyro responsável por gerenciar o serviço
+    # Inicia o daemon do servidor Pyro responsável por gerenciar o serviço
     daemon = Pyro5.server.Daemon()
 
     # O Pyro5 possui um servidor de nomes (catálogo de serviços), permite que os clientes descubram a localização dos serviços pelo nome, sem precisar saber o endereço exato do servidor
@@ -27,7 +27,7 @@ def main():
     # Registra a classe no daemon, gerando uma referência única (URI) para essa classe, o que permite o cliente identificá-la e se conectar ao serviço
     uri = daemon.register(IdealWeightCalculator)
     # Associa o nome específico com a URI do serviço no servidor de nomes
-    # Permite que o cliente localize o serviço apenas com o nome, sem se preocupar com a URI real
+    # Permite que o cliente localize o serviço apenas com o nome
     ns.register("define_ideal_weight", uri)
     
     print("Service is running")

@@ -7,15 +7,15 @@ import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Element
 
 /**
- * Fluxo: O cliente coleta as informações do usuário, constrói o XML com essas info e indica qual o método a ser chamado.
- * Essa requisição é enviada para o servidor através de uma conexão HTTP. O servidor lê a requisição, executa o método 
- * correspondente e retorna uma resposta. O cliente lê a resposta e exibe o resultado.
+ * Fluxo: O cliente coleta as informações do usuário, constrói o XML com essas info e indica qual o método a ser chamado junto com seus parâmetros.
+ * Essa requisição, contendo um XML no corpo, é enviada para o servidor através de uma conexão HTTP. O servidor lê a requisição, executa o método 
+ * correspondente e retorna uma resposta, também em XML no corpo. O cliente lê a resposta navegando pelo XML e exibe o resultado.
  */
 
 fun main() {
     try {
 
-        // Endereço do servidor XML-RPC
+        // Endereço do servidor XML-RPC (nesse caso é necessário que o cliente saiba)
         val serverUrl = "http://localhost:5000"
 
         // Coleta de dados do usuário
@@ -34,7 +34,7 @@ fun main() {
             return
         }
 
-        // Construindo a requisição XML-RPC
+        // Construindo o corpo da requisição XML-RPC (não existe um tipo para caracteres únicos como char, por isso usa string)
         // .trimIndent() -> retirar os espaços em branco comuns antes de cada linha da string, mas mantendo a estrutura hierárquica/identação de um XML
         val xmlRequest = """
             <?xml version="1.0"?>
@@ -52,7 +52,7 @@ fun main() {
         // Cria um objeto URL
         val url = URL(serverUrl)
         // Abrir conexão HTTP com o servidor da URL
-        // Casting para uma subclasse de URLConnection para enviar especificamente uma solicitação HTTP
+        // Casting para uma subclasse de URLConnection para abrir especificamente uma conexão HTTP
         val connection = url.openConnection() as HttpURLConnection
         // Método HTTP usado na requisição (requestbody)
         connection.requestMethod = "POST"
@@ -61,27 +61,27 @@ fun main() {
         // Indica que a conexão vai enviar dados ao servidor (POST), vai escrever no output stream da conexão
         connection.doOutput = true
 
-        // Enviar a requisição com o XML para o servidor
+        // Enviar a requisição com o XML no corpo para o servidor
 
         // Objeto OutputStreamWriter para escrever dados no fluxo de saída da conexão HTTP
         val outputStream = OutputStreamWriter(connection.outputStream)
         outputStream.write(xmlRequest)
         outputStream.flush() // Envio imediato dos dados
-        outputStream.close() // Libera o fluxo de saída e fecha a conexão
+        outputStream.close() // Fecha o fluxo de saída utilizado para enviar de dados ao servidor
 
-        // Ler a resposta do servidor (que também é um XML)
+        // Ler a resposta do servidor, que também possui um XML
 
-        // Acesso ao fluxo de entrada associado à conexão
-        val responseStream = connection.inputStream
-        // Analisa o XML de resposta usando o DocumentBuilderFactory e o parse() para converter o XML em um DOM (Document Object Model), estrutura manipulável
+        // Acessa o fluxo de entrada da conexão HTTP
+        val response = connection.inputStream
+        // Analisa o XML da resposta usando o DocumentBuilderFactory e o parse() para converter o XML em um DOM (Document Object Model), estrutura manipulável
         // O DOM é uma representação em árvore do documento XML, sendo mais fácil de navegar e extrair informações
-        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(responseStream)
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(response)
         // Padronização da estrutura e evita problemas de espaçamento
         document.documentElement.normalize()
 
-        // Extração da informação do XML de resposta (navegar na estrutura XML procurando info)
+        // Extrair a informação do XML de resposta (navegar na estrutura XML procurando info)
 
-        // Acessa o primeiro elemento com a tag <double> do documento XML de resposta (como só tem um, fica mais fácil, basta pegar o primeiro)
+        // Acessa o primeiro elemento com a tag <double> do documento XML de resposta (como só tem uma tag double e essa informação, fica mais fácil, basta pegar o primeiro)
         // Casting para element, acesso a método para manipular esse nó do XML
         val valueElement = document.getElementsByTagName("double").item(0) as Element
         // Extrai o valor/conteúdo de texto do elemento <double> e converte para Double

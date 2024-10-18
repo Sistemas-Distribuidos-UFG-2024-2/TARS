@@ -1,14 +1,19 @@
+# Biblioteca que facilita a criação de aplicações distribuídas e a comunicação entre objetos remotos localizados em diferentes máquinas
+# Permite que um programa em Python invoque métodos em objetos que estão localizados em outro computador, como se esses objetos estivessem na mesma máquina
 import Pyro5.api
 
-# RMI permite a execução de métodos em objetos localizados remotamente
+# RMI permite a execução remota de métodos em objetos localizados em outra máquina
 # O servidor cria métodos que podem ser chamados remotamente
 # Esses métodos são expostos para que o cliente possa acessá-los remotamente
-# Tem um servidor de nomes onde os serviços (métodos/objetos remotos) são registrados para que os clientes possam localizá-los
-# O cliente utiliza uma URI (identificador) para se conectar ao servidor de nomes e invovar os métodos remotamente
+# Tem um servidor de nomes onde os serviços (objetos remotos com seus métodos) são registrados para que os clientes possam localizá-los
+# O cliente se conecta com o servidor de nomes primeiro, obtém as informações para acessar o servidor, aí sim se conecta ao servidor em si
+# O cliente utiliza uma URI (identificador) para se conectar ao servidor de nomes e invocar os métodos remotamente
+# Nesse caso o cliente não precisa saber o IP nem porta do servidor justamente por conta do servidor de nomes, pois é ele quem possui essas informações
 
 
-# Fluxo: No lado servidor, ele é iniciado, registra o serviço IdealWeightCalculator no servidor de nomes e espera por chamadas de clientes.
-# O cliente se conecta ao serviço pelo nome, coleta os dados do usuário, faz as validações necessárias e faz uma chamada remota ao método define_ideal_weight.
+# Fluxo: O servidor é iniciado, registra o serviço 'IdealWeightCalculator' com seus métodos no servidor de nomes e espera por chamadas de clientes.
+# O cliente se conecta ao serviço pelo nome dele.
+# O cliente coleta os dados do usuário, faz as validações necessárias e faz uma chamada remota ao método 'define_ideal_weight' do serviço.
 # O servidor calcula o peso ideal e retorna o resultado para o cliente. O cliente recebe a resposta e a exibe para o usuário.
 
 def main():
@@ -16,7 +21,7 @@ def main():
     # Cria uma referência ao nome do serviço registrado no servidor de nomes (consegue acessar o serviço sem precisar saber o endereço do servidor)
     uri = "PYRONAME:define_ideal_weight"
     # Cria um proxy para o serviço remoto, o que permite que o cliente invoque métodos como se fossem métodos locais
-    # Esse objeto representa o serviço IdealWeightCalculator no servidor, permitindo que o cliente chame o método define_ideal_weight
+    # Essa variável representa o serviço 'IdealWeightCalculator' do servidor, permitindo que o cliente chame o método 'define_ideal_weight'
     ideal_weight_service = Pyro5.api.Proxy(uri)
 
     height_input = input("Enter your height (in meters): ").strip()
