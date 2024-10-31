@@ -1,6 +1,6 @@
 ## 🚧 Comandos 🚧
 
 ```
-gcc simple_example.c -o simple_publisher -lrabbitmq
-./simple_publisher
+gcc temperature_sensor.c -o temperature_sensor -lrabbitmq
+./temperature_sensor
 ```
