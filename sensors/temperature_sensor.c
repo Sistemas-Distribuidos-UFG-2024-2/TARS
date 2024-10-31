@@ -86,7 +86,7 @@ void read_and_publish_temperature(const char *file_path) {
         rewind(file);
     }
 
-    // TODO: Necessário mesmo lendo todo o arquivo?
+    // TODO: Necessário mesmo lendo todo o arquivo em loop?
     fclose(file);
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
