@@ -24,7 +24,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let client_message: ClientMessage =
             serde_json::from_slice(msg).expect("Failed to parse JSON");
 
-        // Logic to determine if the client can retire
         let can_retire = client_message.age >= 65
             || client_message.service_time >= 30
             || client_message.age >= 60 && client_message.service_time >= 25;
