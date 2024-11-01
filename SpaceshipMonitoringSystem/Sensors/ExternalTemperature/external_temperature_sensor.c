@@ -12,6 +12,12 @@
 #define QUEUE_NAME "external_temperature_queue"
 #define FILE_PATH "external_temperatures.txt"
 
+
+/**
+ * Intervalo normal de temperatura de uma espaçonave que está próxima à Terra (órbita baixa terrestre): -150ºC a +150ºC
+ */
+
+
 // Função para estabelecer uma conexão com o RabbitMQ através de um socket TCP
 amqp_connection_state_t connect_rabbitmq() {
     amqp_connection_state_t conn = amqp_new_connection();
