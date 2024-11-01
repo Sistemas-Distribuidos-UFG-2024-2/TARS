@@ -6,11 +6,11 @@
 #include <unistd.h>
 
 // Endereço e porta padrão do servidor RabbitMQ
-#define HOSTNAME "localhost"
+#define HOSTNAME "host.docker.internal"
 #define PORT 5672
 // Nome da fila em que o sensor publicará as mensagens
-#define QUEUE_NAME "temperature_queue"
-#define FILE_PATH "temperatures.txt"
+#define QUEUE_NAME "external_temperature_queue"
+#define FILE_PATH "external_temperatures.txt"
 
 // Função para estabelecer uma conexão com o RabbitMQ através de um socket TCP
 amqp_connection_state_t connect_rabbitmq() {
@@ -27,9 +27,17 @@ amqp_connection_state_t connect_rabbitmq() {
         exit(1);
     }
 
-    // Configuração de login no RabbitMQ com acesso padrão
-    // TODO: Tem como tirar isso e fazer de outra forma?
-    amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, "guest", "guest");
+    // Obter as credenciais do RabbitMQ das variáveis de ambiente do Docker
+    const char *username = getenv("RABBITMQ_USER");
+    const char *password = getenv("RABBITMQ_PASSWORD");
+
+    if (!username || !password) {
+        fprintf(stderr, "Error: RabbitMQ credentials not set in environment variables\n");
+        exit(1);
+    }
+
+    // Configuração de login no RabbitMQ usando as variáveis de ambiente
+    amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username, password);
 
     // Abre o canal 1 para comunicação
     amqp_channel_open(conn, 1);
