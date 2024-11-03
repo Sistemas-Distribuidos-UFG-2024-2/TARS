@@ -3,8 +3,8 @@
 * Para executar localmente:
 
 ```
-gcc temperature_sensor.c -o temperature_sensor -lrabbitmq
-./temperature_sensor
+gcc internal_temperature_sensor.c -o internal_temperature_sensor -lrabbitmq
+./internal_temperature_sensor
 ```
 
 * Comandos para criar a imagem e container Docker:
