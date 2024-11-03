@@ -99,10 +99,10 @@ void publish_temperature(amqp_connection_state_t *conn, const char *message) {
     props.content_type = amqp_cstring_bytes("text/plain");
 
     // Tenta publicar a mensagem na fila
-    int answer = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(message));
+    int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(message));
 
     // Verifica se a publicação foi bem-sucedida, caso contrário fecha e destrói a conexão, tenta reconectar e publicar novamente
-    if(answer != 0 || amqp_get_rpc_reply(*conn).reply_type != AMQP_RESPONSE_NORMAL) {
+    if(result != 0 || amqp_get_rpc_reply(*conn).reply_type != AMQP_RESPONSE_NORMAL) {
         printf("Error publishing message, attempting to reconnect...\n");
         amqp_channel_close(*conn, 1, AMQP_REPLY_SUCCESS);
         amqp_connection_close(*conn, AMQP_REPLY_SUCCESS);
@@ -114,10 +114,22 @@ void publish_temperature(amqp_connection_state_t *conn, const char *message) {
 
 // Função que lê o arquivo e publica os dados no RabbitMQ
 void read_and_publish_temperature(const char *file_path) {
-    FILE *file = fopen(file_path, "r");
-    if(!file) {
-        printf("Error opening file\n");
-        exit(1);
+    FILE *file;
+    int attempt = 0;
+    const int max_attempts = 5;
+
+    // Loop para tentar abrir o arquivo até que seja bem-sucedido
+    while(1) {
+        file = fopen(file_path, "r");
+        if(file) {
+            printf("Successfully opened file.\n");
+            break;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error opening file. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
     }
 
     // Armazena até 255 caracteres de uma linha
@@ -132,9 +144,7 @@ void read_and_publish_temperature(const char *file_path) {
             line[strcspn(line, "\n")] = 0;
             printf("Sending temperature: %s\n", line);
             publish_temperature(&conn, line);
-
-            // Publica uma temperatura nova a cada 2s
-            sleep(2);
+            sleep(2); // Publica uma temperatura nova a cada 2s
         }
 
         // Se chegar ao fim do arquivo, volta ao início dele
