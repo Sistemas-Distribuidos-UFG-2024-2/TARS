@@ -10,8 +10,7 @@ public class BasicProducer : IBasicProducer
     {
         _bus = bus;
     }
-
-
+    
     public string QueueName => "queue:basic-queue";
 
     public async Task PublishAsync<T>(T message) where T : notnull

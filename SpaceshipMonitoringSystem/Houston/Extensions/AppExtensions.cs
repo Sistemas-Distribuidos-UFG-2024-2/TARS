@@ -1,4 +1,3 @@
-using Houston.BackgroundServices;
 using Houston.Consumers;
 using Houston.Producers;
 using MassTransit;
@@ -7,7 +6,7 @@ namespace Houston.Extensions;
 
 public static class AppExtensions
 {
-    public static void AddRabbitMQService(this IServiceCollection services, IConfiguration configuration)
+    public static void AddRabbitMqService(this IServiceCollection services, IConfiguration configuration)
     {
         var section = configuration.GetSection("RabbitMQ");
         
