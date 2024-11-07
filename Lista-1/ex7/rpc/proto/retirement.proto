@@ -1,0 +1,13 @@
+syntax = "proto3";
+package retirement;
+
+service Retirement {
+  rpc CanRetire(RetirementRequest) returns (RetirementResponse);
+}
+
+message RetirementRequest {
+  uint32 age = 1;
+  uint32 service_time = 2;
+}
+
+message RetirementResponse { bool can_retire = 1; }

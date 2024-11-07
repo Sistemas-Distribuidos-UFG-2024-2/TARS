@@ -1,0 +1,6 @@
+*.idea/
+*debug/
+*bin/
+*obj/
+*target/
+**/*.rs.bk

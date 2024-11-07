@@ -1,0 +1,53 @@
+﻿name: spaceshipmonitoringsystem
+
+services:
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - 5672:5672
+
+  rabbitmqmanagement:
+    image: rabbitmq:4.0-management
+    ports:
+      - 15672:15672
+
+  houston:
+    image: houston
+    build:
+      context: ./Houston
+      dockerfile: Dockerfile
+    ports:
+      - 5008:8080
+    depends_on:
+      - rabbitmq
+
+  spaceshipinterface:
+    image: spaceshipinterface
+    build:
+      context: ./SpaceshipInterface
+      dockerfile: Dockerfile
+    ports:
+      - 5236:8080
+    depends_on:
+      - rabbitmq
+
+  analysisservice:
+    image: analysisservice
+    build:
+      context: ./AnalysisService
+      dockerfile: Dockerfile
+    ports:
+      - 5202:8080
+    depends_on:
+      - rabbitmq
+
+  notificationsystem:
+    image: notificationsystem
+    build:
+      context: ./NotificationSystem
+      dockerfile: Dockerfile
+    ports:
+      - 5166:8080
+    depends_on:
+      - rabbitmq
+  
