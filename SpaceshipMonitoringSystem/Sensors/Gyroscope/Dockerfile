@@ -20,11 +20,11 @@ RUN git clone https://github.com/alanxz/rabbitmq-c.git && \
     rm -rf rabbitmq-c
 
 #Copia o código fonte do sensor e os dados para o diretório de trabalho
-COPY gyroscope.c .
-COPY gyroscopeData.txt .
+COPY gyroscope_sensor.c .
+COPY gyroscope_values.txt .
 
 #Compila a cópia gerada previamente dentro do diretório
-RUN gcc gyroscope.c -o gyroscope -lrabbitmq
+RUN gcc gyroscope_sensor.c -o gyroscope_sensor -lrabbitmq
 
 #Define o comando padrão para rodar o executável
-ENTRYPOINT ["./gyroscope"]
+ENTRYPOINT ["./gyroscope_sensor"]
