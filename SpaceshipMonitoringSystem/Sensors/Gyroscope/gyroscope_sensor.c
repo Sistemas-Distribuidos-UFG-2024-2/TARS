@@ -5,7 +5,7 @@
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
 
-#define HOSTNAME "host.docker.internal"
+#define HOSTNAME "rabbitmq"
 #define PORT 5672
 #define QUEUE_NAME "gyroscope_queue"
 #define FILE_PATH "gyroscope_values.txt"
@@ -81,7 +81,7 @@ void publish_gyroscope(amqp_connection_state_t *conn, const char *json_message) 
         *conn = connect_rabbitmq();
     }
 
-    amqp_queue_declare(*conn, 1, amqp_cstring_bytes(QUEUE_NAME), 0, 1, 0, 1, amqp_empty_table);
+    amqp_queue_declare(*conn, 1, amqp_cstring_bytes(QUEUE_NAME), 0, 1, 0, 0, amqp_empty_table);
     amqp_bytes_t queue = amqp_cstring_bytes(QUEUE_NAME);
 
     amqp_basic_properties_t props;

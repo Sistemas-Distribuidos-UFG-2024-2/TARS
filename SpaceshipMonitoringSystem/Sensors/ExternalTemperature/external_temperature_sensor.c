@@ -90,7 +90,7 @@ void publish_temperature(amqp_connection_state_t *conn, const char *message) {
     }
 
     // Declara a fila antes de publicar para garantir que ela existe
-    amqp_queue_declare(*conn, 1, amqp_cstring_bytes(QUEUE_NAME), 0, 0, 0, 1, amqp_empty_table);
+    amqp_queue_declare(*conn, 1, amqp_cstring_bytes(QUEUE_NAME), 0, 1, 0, 0, amqp_empty_table);
     amqp_bytes_t queue = amqp_cstring_bytes(QUEUE_NAME);
 
     // Propriedades da mensagem

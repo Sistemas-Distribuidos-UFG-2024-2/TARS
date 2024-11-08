@@ -17,6 +17,8 @@ public static class AppExtensions
         services.AddMassTransit(configurator =>
         {
             configurator.AddConsumer<BasicConsumer>();
+            // configurator.AddConsumer<ExternalTemperatureConsumer>();
+            configurator.AddConsumer<GyroscopeConsumer>();
             
             configurator.UsingRabbitMq((context, factoryConfigurator) =>
             {
@@ -25,9 +27,22 @@ public static class AppExtensions
                     host.Username(username);
                     host.Password(password);
                 });
+                
                 factoryConfigurator.ReceiveEndpoint("basic-queue", endpoint =>
                 {
                     endpoint.ConfigureConsumer<BasicConsumer>(context);
+                });
+                
+                /*factoryConfigurator.ReceiveEndpoint("external_temperature_queue", endpoint =>
+                {
+                    endpoint.ConfigureConsumer<ExternalTemperatureConsumer>(context);
+                });*/
+                
+                factoryConfigurator.ReceiveEndpoint("gyroscope_queue", endpoint =>
+                {
+                    endpoint.UseRawJsonSerializer();
+                    endpoint.UseRawJsonDeserializer();
+                    endpoint.ConfigureConsumer<GyroscopeConsumer>(context);
                 });
                 
                 factoryConfigurator.ConfigureEndpoints(context);
