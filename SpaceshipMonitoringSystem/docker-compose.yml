@@ -59,4 +59,16 @@ services:
     ports:
       - 5166:8080
     <<: *common
+
+  externaltemperature_sensor:
+    build:
+      context: ./Sensors/ExternalTemperature
+      dockerfile: Dockerfile
+    <<: *common
+
+  gyroscope_sensor:
+    build:
+      context: ./Sensors/Gyroscope
+      dockerfile: Dockerfile
+    <<: *common
   
