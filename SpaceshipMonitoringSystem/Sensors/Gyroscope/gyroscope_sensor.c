@@ -124,12 +124,10 @@ void read_and_pub_gyroscope(const char *file_path) {
                 case 'x':
                     printf("Sending value: %s\n", buffer);
                     publish_gyroscope(&conn, buffer);
-                    sleep(2);
                     break;
                 case 'y':
                     printf("Sending value: %s\n", buffer);
                     publish_gyroscope(&conn, buffer);
-                    sleep(2);
                     break;
                 case 'z':
                     printf("Sending value: %s\n", buffer);
