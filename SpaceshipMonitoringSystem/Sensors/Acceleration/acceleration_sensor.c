@@ -5,7 +5,6 @@
 #include <amqp_tcp_socket.h>
 #include <unistd.h>
 
-#define HOSTNAME "host.docker.internal"
 #define PORT 5672
 #define QUEUE_NAME "acceleration_queue"
 #define FILE_PATH "acceleration_values.txt"
