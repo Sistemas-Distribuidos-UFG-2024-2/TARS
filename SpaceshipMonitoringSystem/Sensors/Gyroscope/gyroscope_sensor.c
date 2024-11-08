@@ -10,6 +10,12 @@
 #define QUEUE_NAME "gyroscope_queue"
 #define FILE_PATH "gyroscope_values.txt"
 
+typedef struct {
+    float x;
+    float y;
+    float z;
+} Coordinate;
+
 /* Giroscópios são extremamente importantes para navegação. 
     Eles ajudam na orientação da direção em que um corpo se move pelo espaço.
     Os giroscópios modernos oferecem 3 tipos de dados diferentes:
@@ -69,20 +75,20 @@ amqp_connection_state_t connect_rabbitmq() {
     }
 }
 
-void publish_gyroscope(amqp_connection_state_t *conn, const char *message) {
+void publish_gyroscope(amqp_connection_state_t *conn, const char *json_message) {
     
     if(*conn == NULL) {
         *conn = connect_rabbitmq();
     }
 
-    amqp_queue_declare(*conn, 1, amqp_cstring_bytes(QUEUE_NAME), 0, 0, 0, 1, amqp_empty_table);
+    amqp_queue_declare(*conn, 1, amqp_cstring_bytes(QUEUE_NAME), 0, 1, 0, 1, amqp_empty_table);
     amqp_bytes_t queue = amqp_cstring_bytes(QUEUE_NAME);
 
     amqp_basic_properties_t props;
     props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG;
-    props.content_type = amqp_cstring_bytes("text/plain");
+    props.content_type = amqp_cstring_bytes("application/json");
 
-    int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(message));
+    int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(json_message));
 
     if(result != 0 || amqp_get_rpc_reply(*conn).reply_type != AMQP_RESPONSE_NORMAL) {
         printf("Error publishing message, attempting to reconnect...\n");
@@ -90,7 +96,7 @@ void publish_gyroscope(amqp_connection_state_t *conn, const char *message) {
         amqp_connection_close(*conn, AMQP_REPLY_SUCCESS);
         amqp_destroy_connection(*conn);
         *conn = connect_rabbitmq();
-        publish_gyroscope(conn, message);
+        publish_gyroscope(conn, json_message);
     }
 }
 
@@ -112,35 +118,34 @@ void read_and_pub_gyroscope(const char *file_path) {
         }
     }
 
-    const unsigned MAX_LENGTH = 16;
+    const unsigned MAX_LENGTH = 64;
     char buffer[MAX_LENGTH];
     amqp_connection_state_t conn = connect_rabbitmq();
 
     while(1) {
         // Função que lê a linha e aloca na string (vetor) "buffer"
-        while (fgets(buffer, MAX_LENGTH, file)){
+        while (fgets(buffer, MAX_LENGTH, file)) {
             buffer[strcspn(buffer, "\n")] = 0;
-            switch(buffer[0]){
-                case 'x':
-                    printf("Sending value: %s\n", buffer);
-                    publish_gyroscope(&conn, buffer);
-                    sleep(2);
-                    break;
-                case 'y':
-                    printf("Sending value: %s\n", buffer);
-                    publish_gyroscope(&conn, buffer);
-                    sleep(2);
-                    break;
-                case 'z':
-                    printf("Sending value: %s\n", buffer);
-                    publish_gyroscope(&conn, buffer);
-                    // Como o eixo Z é o último dado esperado a cada vez que uma leitura do giroscópio é feita, 
-                    // há um sleep apenas para evitar que os dados do arquivo (que simulam o sensor) sejam lidos instantaneamente
-                    sleep(5); 
-                    break;
-                default:
-                    printf("Error in data validation");  
+            
+            // Inicializa campos da struct
+            Coordinate coordinate = {0.0, 0.0, 0.0};
+
+            // Extrai os valores x, y e z da linha
+            if (sscanf(buffer, "x=%f;y=%f;z=%f", &coordinate.x, &coordinate.y, &coordinate.z) == 3) {
+                printf("Sending coordinates: x=%.3f, y=%.3f, z=%.3f\n", coordinate.x, coordinate.y, coordinate.z);
+
+                // Formatar a string JSON manualmente
+                char json_message[128];
+                sprintf(json_message, "{\"x\": %.3f, \"y\": %.3f, \"z\": %.3f}", coordinate.x, coordinate.y, coordinate.z);
+
+                // Envia a string JSON
+                publish_gyroscope(&conn, json_message);
+
+            } else {
+                printf("Error parsing line: %s\n", buffer);
             }
+
+            sleep(4);
         }
 
         // Se chegar ao fim do arquivo, volta ao início dele
