@@ -1,6 +1,6 @@
 ﻿name: spaceshipmonitoringsystem
 
-x-common: &common
+x-common-sensors: &common-sensors
   depends_on:
     rabbitmq:
       condition: service_healthy
@@ -8,6 +8,12 @@ x-common: &common
     RABBITMQ_HOSTNAME: "rabbitmq"
     RABBITMQ_USER: "guest"
     RABBITMQ_PASSWORD: "guest"
+
+x-common: &common
+  depends_on:
+    rabbitmq:
+      condition: service_healthy
+  environment:
     RabbitMQ__Host: "amqp://rabbitmq:5672"
     RabbitMQ__Username: "guest"
     RabbitMQ__Password: "guest"
@@ -46,6 +52,7 @@ services:
     <<: *common
 
   analysisservice:
+    container_name: analysisservice
     build:
       context: ./AnalysisService
       dockerfile: Dockerfile
@@ -61,21 +68,44 @@ services:
       - 5166:8080
     <<: *common
 
+  acceleration_sensor:
+    build:
+      context: ./Sensors/Acceleration
+      dockerfile: Dockerfile
+    <<: *common-sensors
+
   externaltemperature_sensor:
     build:
       context: ./Sensors/ExternalTemperature
       dockerfile: Dockerfile
-    <<: *common
+    <<: *common-sensors
+
+  fuelpressure_sensor:
+    build:
+      context: ./Sensors/FuelPressure
+      dockerfile: Dockerfile
+    <<: *common-sensors
 
   gyroscope_sensor:
     build:
       context: ./Sensors/Gyroscope
       dockerfile: Dockerfile
-    <<: *common
-  
-  acceleration_sensor:
+    <<: *common-sensors
+
+  internalpressure_sensor:
     build:
-      context: ./Sensors/Acceleration
+      context: ./Sensors/InternalPressure
       dockerfile: Dockerfile
-    <<: *common
-  
+    <<: *common-sensors
+
+  internaltemperature_sensor:
+    build:
+      context: ./Sensors/InternalTemperature
+      dockerfile: Dockerfile
+    <<: *common-sensors
+
+  radiation_sensor:
+    build:
+      context: ./Sensors/Radiation
+      dockerfile: Dockerfile
+    <<: *common-sensors
