@@ -135,7 +135,7 @@ void read_and_publish_radiation_value(const char *file_path) {
 
             printf("Sending radiation value: %s\n", line);
             publish_radiation_value(&conn, json_message);
-            sleep(2);
+            sleep(3);
         }
 
         rewind(file);
