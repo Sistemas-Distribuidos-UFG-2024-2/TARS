@@ -13,6 +13,6 @@ gcc internal_temperature_sensor.c -o internal_temperature_sensor -lrabbitmq
 
 ```
 docker build -t internal-temperature-sensor .
-docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest RABBITMQ_HOSTNAME=host.docker.internal --name internal-temperature-sensor internal-temperature-sensor
+docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest -e RABBITMQ_HOSTNAME=host.docker.internal --name internal-temperature-sensor internal-temperature-sensor
 ```
 
