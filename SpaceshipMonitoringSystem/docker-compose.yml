@@ -5,6 +5,7 @@ x-common: &common
     rabbitmq:
       condition: service_healthy
   environment:
+    RABBITMQ_HOSTNAME: "rabbitmq"
     RABBITMQ_USER: "guest"
     RABBITMQ_PASSWORD: "guest"
     RabbitMQ__Host: "amqp://rabbitmq:5672"
@@ -69,6 +70,12 @@ services:
   gyroscope_sensor:
     build:
       context: ./Sensors/Gyroscope
+      dockerfile: Dockerfile
+    <<: *common
+  
+  acceleration_sensor:
+    build:
+      context: ./Sensors/Acceleration
       dockerfile: Dockerfile
     <<: *common
   

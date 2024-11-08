@@ -19,6 +19,7 @@ public static class AppExtensions
             configurator.AddConsumer<BasicConsumer>();
             // configurator.AddConsumer<ExternalTemperatureConsumer>();
             configurator.AddConsumer<GyroscopeConsumer>();
+            configurator.AddConsumer<AccelerationConsumer>();
             
             configurator.UsingRabbitMq((context, factoryConfigurator) =>
             {
@@ -43,6 +44,13 @@ public static class AppExtensions
                     endpoint.UseRawJsonSerializer();
                     endpoint.UseRawJsonDeserializer();
                     endpoint.ConfigureConsumer<GyroscopeConsumer>(context);
+                });
+                
+                factoryConfigurator.ReceiveEndpoint("acceleration_queue", endpoint =>
+                {
+                    endpoint.UseRawJsonSerializer();
+                    endpoint.UseRawJsonDeserializer();
+                    endpoint.ConfigureConsumer<AccelerationConsumer>(context);
                 });
                 
                 factoryConfigurator.ConfigureEndpoints(context);
