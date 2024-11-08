@@ -28,4 +28,7 @@ app.MapPost("state/{state}", async (string state, BasicProducer producer) =>
    await producer.PublishAsync(new BasicMessage { State = state });
 });
 
+
+app.MapGet("/", () => Results.Ok("Spaceship interface up and running..."));
+
 app.Run();

@@ -1,10 +1,27 @@
 ﻿name: spaceshipmonitoringsystem
 
+x-common: &common
+  depends_on:
+    rabbitmq:
+      condition: service_healthy
+  environment:
+    RABBITMQ_USER: "guest"
+    RABBITMQ_PASSWORD: "guest"
+    RabbitMQ__Host: "amqp://rabbitmq:5672"
+    RabbitMQ__Username: "guest"
+    RabbitMQ__Password: "guest"
+
 services:
   rabbitmq:
     image: rabbitmq
     ports:
       - 5672:5672
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
   rabbitmqmanagement:
     image: rabbitmq:4.0-management
@@ -12,42 +29,34 @@ services:
       - 15672:15672
 
   houston:
-    image: houston
     build:
       context: ./Houston
       dockerfile: Dockerfile
     ports:
       - 5008:8080
-    depends_on:
-      - rabbitmq
+    <<: *common
 
   spaceshipinterface:
-    image: spaceshipinterface
     build:
       context: ./SpaceshipInterface
       dockerfile: Dockerfile
     ports:
       - 5236:8080
-    depends_on:
-      - rabbitmq
+    <<: *common
 
   analysisservice:
-    image: analysisservice
     build:
       context: ./AnalysisService
       dockerfile: Dockerfile
     ports:
       - 5202:8080
-    depends_on:
-      - rabbitmq
+    <<: *common
 
   notificationsystem:
-    image: notificationsystem
     build:
       context: ./NotificationSystem
       dockerfile: Dockerfile
     ports:
       - 5166:8080
-    depends_on:
-      - rabbitmq
+    <<: *common
   
