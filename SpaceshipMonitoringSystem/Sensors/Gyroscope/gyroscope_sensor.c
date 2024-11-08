@@ -5,7 +5,6 @@
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
 
-#define HOSTNAME "rabbitmq"
 #define PORT 5672
 #define QUEUE_NAME "gyroscope_queue"
 #define FILE_PATH "gyroscope_values.txt"
@@ -26,6 +25,16 @@ typedef struct {
     Esses valores podem ser positivos ou negativos.
 */
 
+const char* get_hostname() {
+    const char* hostname = getenv("RABBITMQ_HOSTNAME");
+    if (hostname == NULL) {
+        printf("Error: HOSTNAME environment variable not set\n");
+        exit(1);
+    }
+
+    return hostname;
+}
+
 amqp_connection_state_t connect_rabbitmq() {
     amqp_connection_state_t connect_rabbitmq();
     amqp_connection_state_t conn;
@@ -40,7 +49,7 @@ amqp_connection_state_t connect_rabbitmq() {
             printf("Error creating TCP socket. Retrying...\n");
             amqp_destroy_connection(conn);
         } else {
-            if(amqp_socket_open(socket, HOSTNAME, PORT) == 0) {
+            if(amqp_socket_open(socket, get_hostname(), PORT) == 0) {
 
                 const char *username = getenv("RABBITMQ_USER");
                 const char *password = getenv("RABBITMQ_PASSWORD");

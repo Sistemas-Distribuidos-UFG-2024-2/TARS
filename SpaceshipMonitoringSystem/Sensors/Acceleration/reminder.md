@@ -13,6 +13,6 @@ gcc acceleration_sensor.c -o acceleration_sensor -lrabbitmq
 
 ```
 docker build -t acceleration-sensor .
-docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest --name acceleration-sensor acceleration-sensor
+docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest -e RABBITMQ_HOSTNAME=host.docker.internal --name acceleration-sensor acceleration-sensor
 ```
 

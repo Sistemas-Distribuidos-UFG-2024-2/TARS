@@ -13,5 +13,5 @@ gcc internal_pressure_sensor.c -o internal_pressure_sensor -lrabbitmq
 
 ```
 docker build -t internal-pressure-sensor .
-docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest --name internal-pressure-sensor internal-pressure-sensor
+docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest RABBITMQ_HOSTNAME=host.docker.internal --name internal-pressure-sensor internal-pressure-sensor
 ```

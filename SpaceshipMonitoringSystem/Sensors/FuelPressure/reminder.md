@@ -13,6 +13,6 @@ gcc fuel_pressure_sensor.c -o fuel_pressure_sensor -lrabbitmq
 
 ```
 docker build -t fuel-pressure-sensor .
-docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest --name fuel-pressure-sensor fuel-pressure-sensor
+docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest RABBITMQ_HOSTNAME=host.docker.internal --name fuel-pressure-sensor fuel-pressure-sensor
 ```
 

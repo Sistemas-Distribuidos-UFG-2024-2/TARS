@@ -13,6 +13,6 @@ gcc gyroscope_sensor.c -o gyroscope_sensor -lrabbitmq
 
 ```
 docker build -t gyroscope-sensor .
-docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest --name gysroscope-sensor gyroscope-sensor
+docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest RABBITMQ_HOSTNAME=host.docker.internal --name gysroscope-sensor gyroscope-sensor
 ```
 
