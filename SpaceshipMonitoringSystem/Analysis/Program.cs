@@ -1,6 +1,4 @@
-using Analysis.DTO;
 using Analysis.Extensions;
-using Analysis.Producers;
 using Analysis.Utils;
 using Serilog;
 
@@ -11,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSerilog();
+builder.Services.AddServices();
 builder.Services.AddRabbitMqService(builder.Configuration);
 
 var app = builder.Build();

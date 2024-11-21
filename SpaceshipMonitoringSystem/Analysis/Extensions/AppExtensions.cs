@@ -1,11 +1,17 @@
 using Analysis.Consumers;
 using Analysis.Producers;
+using Analysis.Services;
 using MassTransit;
 
 namespace Analysis.Extensions;
 
 public static class AppExtensions
 {
+    public static void AddServices(this IServiceCollection services)
+    {
+        services.AddScoped<IAnalysisService>();
+    }
+    
     public static void AddRabbitMqService(this IServiceCollection services, IConfiguration configuration)
     {
         var section = configuration.GetSection("RabbitMQ");
