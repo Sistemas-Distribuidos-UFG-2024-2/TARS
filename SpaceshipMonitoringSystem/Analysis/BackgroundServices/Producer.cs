@@ -1,7 +1,7 @@
-using AnalysisService.DTO;
+using Analysis.DTO;
 using MassTransit;
 
-namespace AnalysisService.BackgroundServices;
+namespace Analysis.BackgroundServices;
 
 public class Producer : BackgroundService
 {

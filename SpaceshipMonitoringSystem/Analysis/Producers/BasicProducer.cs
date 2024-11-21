@@ -1,6 +1,6 @@
 using MassTransit;
 
-namespace AnalysisService.Producers;
+namespace Analysis.Producers;
 
 public class BasicProducer : IBasicProducer
 {

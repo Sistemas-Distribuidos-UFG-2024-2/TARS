@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace AnalysisService.DTO;
+namespace Analysis.DTO;
 
 public record FuelPressureMessage(
     [property: JsonPropertyName("fuel_pressure")]

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace AnalysisService.DTO;
+namespace Analysis.DTO;
 
 public record InternalTemperatureMessage(
     [property: JsonPropertyName("internal_temperature")]

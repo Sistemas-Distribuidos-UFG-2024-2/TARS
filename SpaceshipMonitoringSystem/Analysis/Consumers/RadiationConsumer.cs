@@ -1,7 +1,7 @@
-using AnalysisService.DTO;
+using Analysis.DTO;
 using MassTransit;
 
-namespace AnalysisService.Consumers;
+namespace Analysis.Consumers;
 
 public class RadiationConsumer : IConsumer<RadiationMessage>
 {

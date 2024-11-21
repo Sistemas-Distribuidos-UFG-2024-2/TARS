@@ -2,7 +2,7 @@ using Serilog;
 using Serilog.Templates;
 using Serilog.Templates.Themes;
 
-namespace AnalysisService.Utils;
+namespace Analysis.Utils;
 
 public static class SerilogConfiguration
 {

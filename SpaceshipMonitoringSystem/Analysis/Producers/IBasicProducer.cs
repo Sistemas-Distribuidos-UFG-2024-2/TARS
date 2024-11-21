@@ -1,4 +1,4 @@
-namespace AnalysisService.Producers;
+namespace Analysis.Producers;
 
 public interface IBasicProducer
 {

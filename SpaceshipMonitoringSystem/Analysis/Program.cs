@@ -1,7 +1,7 @@
-using AnalysisService.DTO;
-using AnalysisService.Extensions;
-using AnalysisService.Producers;
-using AnalysisService.Utils;
+using Analysis.DTO;
+using Analysis.Extensions;
+using Analysis.Producers;
+using Analysis.Utils;
 using Serilog;
 
 SerilogConfiguration.ConfigureLogger();

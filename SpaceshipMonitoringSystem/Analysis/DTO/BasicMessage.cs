@@ -1,4 +1,4 @@
-namespace AnalysisService.DTO;
+namespace Analysis.DTO;
 
 public record BasicMessage
 {

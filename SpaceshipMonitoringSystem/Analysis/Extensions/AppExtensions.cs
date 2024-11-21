@@ -1,8 +1,8 @@
-using AnalysisService.Consumers;
-using AnalysisService.Producers;
+using Analysis.Consumers;
+using Analysis.Producers;
 using MassTransit;
 
-namespace AnalysisService.Extensions;
+namespace Analysis.Extensions;
 
 public static class AppExtensions
 {
