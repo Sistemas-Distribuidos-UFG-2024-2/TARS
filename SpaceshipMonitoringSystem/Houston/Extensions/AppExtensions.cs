@@ -16,7 +16,7 @@ public static class AppExtensions
 
         services.AddMassTransit(configurator =>
         {
-            configurator.AddConsumer<BasicConsumer>();
+            configurator.AddConsumer<SpaceshipConsumer>();
             
             configurator.UsingRabbitMq((context, factoryConfigurator) =>
             {
@@ -25,15 +25,15 @@ public static class AppExtensions
                     host.Username(username);
                     host.Password(password);
                 });
-                factoryConfigurator.ReceiveEndpoint("basic-queue", endpoint =>
+                factoryConfigurator.ReceiveEndpoint("spaceship", endpoint =>
                 {
-                    endpoint.ConfigureConsumer<BasicConsumer>(context);
+                    endpoint.ConfigureConsumer<SpaceshipConsumer>(context);
                 });
                 
                 factoryConfigurator.ConfigureEndpoints(context);
             });
         });
 
-        services.AddScoped<BasicProducer>();
+        services.AddScoped<SpaceshipProducer>();
     }
 }

@@ -23,11 +23,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseSerilogRequestLogging();
 
-app.MapPost("state/{state}", async (string state, BasicProducer producer) =>
+app.MapPost("api/houston", async (string text, HoustonProducer producer) =>
 {
-   await producer.PublishAsync(new BasicMessage { State = state });
+    await producer.PublishAsync(new HoustonMessage(text));
+    return Results.Ok("Message published");
 });
-
 
 app.MapGet("/", () => Results.Ok("Spaceship interface up and running..."));
 

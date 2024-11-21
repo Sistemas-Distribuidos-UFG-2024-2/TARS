@@ -1,7 +1,7 @@
 namespace Houston.Producers;
 
-public interface IBasicProducer
+public interface IBasicProducer<in TMessage> where TMessage : notnull
 {
     string QueueName { get; }
-    Task PublishAsync<T>(T message) where T : notnull;
+    Task PublishAsync(TMessage message);
 }

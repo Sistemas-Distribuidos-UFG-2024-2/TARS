@@ -15,15 +15,18 @@ builder.Services.AddRabbitMqService(builder.Configuration);
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())    
+{
     app.UseSwagger();
     app.UseSwaggerUI();
-
+}
 
 app.UseSerilogRequestLogging();
 
-app.MapGet("state/{state}", async (string state, BasicProducer producer) =>
+app.MapPost("api/spaceship", async (string text, SpaceshipProducer producer) =>
 {
-   await producer.PublishAsync(new BasicMessage { State = state });
+   await producer.PublishAsync(new SpaceshipMessage(text));
+   return Results.Ok("Message published");
 });
 
 app.MapGet("/", () => Results.Ok("Houston up and running..."));

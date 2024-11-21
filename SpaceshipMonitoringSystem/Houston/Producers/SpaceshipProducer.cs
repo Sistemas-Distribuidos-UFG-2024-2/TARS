@@ -1,19 +1,20 @@
+using Houston.DTO;
 using MassTransit;
 
 namespace Houston.Producers;
 
-public class BasicProducer : IBasicProducer
+public class SpaceshipProducer : IBasicProducer<SpaceshipMessage>
 {
     private readonly IBus _bus;
 
-    public BasicProducer(IBus bus)
+    public SpaceshipProducer(IBus bus)
     {
         _bus = bus;
     }
-    
-    public string QueueName => "queue:basic-queue";
 
-    public async Task PublishAsync<T>(T message) where T : notnull
+    public string QueueName => "queue:spaceship";
+    
+    public async Task PublishAsync(SpaceshipMessage message)
     {
         var endpoint = await _bus.GetSendEndpoint(new Uri(QueueName));
 
