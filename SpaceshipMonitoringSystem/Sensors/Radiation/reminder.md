@@ -13,6 +13,6 @@ gcc radiation_sensor.c -o radiation_sensor -lrabbitmq
 
 ```
 docker build -t radiation-sensor .
-docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest --name radiation-sensor radiation-sensor
+docker run -d -e RABBITMQ_USER=guest -e RABBITMQ_PASSWORD=guest -e RABBITMQ_HOSTNAME=host.docker.internal --name radiation-sensor radiation-sensor
 ```
 

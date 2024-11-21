@@ -133,9 +133,9 @@ void read_and_publish_acceleration(const char *file_path) {
             char json_message[128];
             sprintf(json_message, "{\"acceleration\": %.3f}", acceleration.data);
 
-            printf("Sending acceleration: %s\n", json_message);
+            printf("Sending acceleration: %s\n", line);
             publish_acceleration(&conn, json_message);
-            sleep(2);
+            sleep(3);
         }
 
         rewind(file);

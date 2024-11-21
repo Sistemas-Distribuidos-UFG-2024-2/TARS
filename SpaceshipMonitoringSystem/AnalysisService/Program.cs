@@ -23,12 +23,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseSerilogRequestLogging();
 
-app.MapPost("state/{state}", async (string state, BasicProducer producer) =>
-{
-   await producer.PublishAsync(new BasicMessage { State = state });
-});
-
-
 app.MapGet("/", () => Results.Ok("Analytics up and running..."));
 
 app.Run();

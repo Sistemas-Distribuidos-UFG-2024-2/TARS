@@ -1,8 +1,9 @@
+using AnalysisService.DTO;
 using MassTransit;
 
 namespace AnalysisService.Consumers;
 
-public class ExternalTemperatureConsumer : IConsumer<object>
+public class ExternalTemperatureConsumer : IConsumer<ExternalTemperatureMessage>
 {
     private readonly ILogger<ExternalTemperatureConsumer> _logger;
 
@@ -11,10 +12,10 @@ public class ExternalTemperatureConsumer : IConsumer<object>
         _logger = logger;
     }
 
-    public Task Consume(ConsumeContext<object> context)
+    public Task Consume(ConsumeContext<ExternalTemperatureMessage> context)
     {
-        _logger.LogInformation("Message: {State}", context.Message);
-        
+        _logger.LogInformation("External temperature: {Temp}", context.Message.Externaltemperature);
+
         return Task.CompletedTask;
     }
 }

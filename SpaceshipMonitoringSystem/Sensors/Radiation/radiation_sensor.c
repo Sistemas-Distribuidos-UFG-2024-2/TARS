@@ -5,11 +5,13 @@
 #include <amqp_tcp_socket.h>
 #include <unistd.h>
 
-#define HOSTNAME "host.docker.internal"
 #define PORT 5672
 #define QUEUE_NAME "radiation_queue"
 #define FILE_PATH "radiation_values.txt"
 
+typedef struct {
+    float rad;
+} Data;
 
 /**
  * Unidade de medida: Sieverts (Sv) - unidade padrão para medir a dose de radiação absorvida com base nos efeitos biológicos
@@ -18,6 +20,15 @@
  * Anômalo (perigoso): Acima de 1000 μSv/h — níveis considerados arriscados para a saúde e segurança, especialmente se a exposição for prolongada
  */
 
+const char* get_hostname() {
+    const char* hostname = getenv("RABBITMQ_HOSTNAME");
+    if (hostname == NULL) {
+        printf("Error: HOSTNAME environment variable not set\n");
+        exit(1);
+    }
+
+    return hostname;
+}
 
 amqp_connection_state_t connect_rabbitmq() {
     amqp_connection_state_t conn;
@@ -32,7 +43,7 @@ amqp_connection_state_t connect_rabbitmq() {
             printf("Error creating TCP socket. Retrying...\n");
             amqp_destroy_connection(conn);
         } else {
-            if(amqp_socket_open(socket, HOSTNAME, PORT) == 0) {
+            if(amqp_socket_open(socket, get_hostname(), PORT) == 0) {
 
                 const char *username = getenv("RABBITMQ_USER");
                 const char *password = getenv("RABBITMQ_PASSWORD");
@@ -67,20 +78,20 @@ amqp_connection_state_t connect_rabbitmq() {
     }
 }
 
-void publish_radiation_value(amqp_connection_state_t *conn, const char *message) {
+void publish_radiation_value(amqp_connection_state_t *conn, const char *json_message) {
     
     if(*conn == NULL) {
         *conn = connect_rabbitmq();
     }
 
-    amqp_queue_declare(*conn, 1, amqp_cstring_bytes(QUEUE_NAME), 0, 0, 0, 1, amqp_empty_table);
+    amqp_queue_declare(*conn, 1, amqp_cstring_bytes(QUEUE_NAME), 0, 1, 0, 0, amqp_empty_table);
     amqp_bytes_t queue = amqp_cstring_bytes(QUEUE_NAME);
 
     amqp_basic_properties_t props;
     props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG;
-    props.content_type = amqp_cstring_bytes("text/plain");
+    props.content_type = amqp_cstring_bytes("application/json");
 
-    int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(message));
+    int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(json_message));
 
     if(result != 0 || amqp_get_rpc_reply(*conn).reply_type != AMQP_RESPONSE_NORMAL) {
         printf("Error publishing message, attempting to reconnect...\n");
@@ -88,7 +99,7 @@ void publish_radiation_value(amqp_connection_state_t *conn, const char *message)
         amqp_connection_close(*conn, AMQP_REPLY_SUCCESS);
         amqp_destroy_connection(*conn);
         *conn = connect_rabbitmq();
-        publish_radiation_value(conn, message);
+        publish_radiation_value(conn, json_message);
     }
 }
 
@@ -116,9 +127,15 @@ void read_and_publish_radiation_value(const char *file_path) {
     while(1) {
         while(fgets(line, sizeof(line), file)) {
             line[strcspn(line, "\n")] = 0;
+
+            Data radiation = { atof(line) };
+
+            char json_message[128];
+            sprintf(json_message, "{\"radiation\": %.1f}", radiation.rad);
+
             printf("Sending radiation value: %s\n", line);
-            publish_radiation_value(&conn, line);
-            sleep(2);
+            publish_radiation_value(&conn, json_message);
+            sleep(3);
         }
 
         rewind(file);

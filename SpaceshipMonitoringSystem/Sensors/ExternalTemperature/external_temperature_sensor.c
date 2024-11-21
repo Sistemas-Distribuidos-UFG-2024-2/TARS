@@ -5,18 +5,30 @@
 #include <amqp_tcp_socket.h>
 #include <unistd.h>
 
-// Endereço e porta padrão do servidor RabbitMQ
-#define HOSTNAME "host.docker.internal"
 #define PORT 5672
 // Nome da fila em que o sensor publicará as mensagens
 #define QUEUE_NAME "external_temperature_queue"
 #define FILE_PATH "external_temperatures.txt"
+
+typedef struct {
+    float temp;
+} Data;
 
 
 /**
  * Intervalo normal de temperatura de uma espaçonave que está próxima à Terra (órbita baixa terrestre): -150ºC a +150ºC
  */
 
+// Função que obtém o hostname a partir de variável de ambiente
+const char* get_hostname() {
+    const char* hostname = getenv("RABBITMQ_HOSTNAME");
+    if (hostname == NULL) {
+        printf("Error: HOSTNAME environment variable not set\n");
+        exit(1);
+    }
+
+    return hostname;
+}
 
 // Função para estabelecer uma conexão com o RabbitMQ através de um socket TCP
 amqp_connection_state_t connect_rabbitmq() {
@@ -35,7 +47,7 @@ amqp_connection_state_t connect_rabbitmq() {
         } else {
 
             // Socket criado, tenta abrir o socket TCP
-            if(amqp_socket_open(socket, HOSTNAME, PORT) == 0) { // Conexão feita com sucesso
+            if(amqp_socket_open(socket, get_hostname(), PORT) == 0) { // Conexão feita com sucesso
 
                 // Obter as credenciais do RabbitMQ das variáveis de ambiente do Docker
                 const char *username = getenv("RABBITMQ_USER");
@@ -81,7 +93,7 @@ amqp_connection_state_t connect_rabbitmq() {
 }
 
 // Função para enviar a mensagem com a temperatura para a fila do RabbitMQ
-void publish_temperature(amqp_connection_state_t *conn, const char *message) {
+void publish_temperature(amqp_connection_state_t *conn, const char *json_message) {
     
     // Verifica se a conexão ainda está ativa antes de cada pub, se não estiver tenta reconectar
     // Se a conexão for interrompida, ele voltará de onde parou
@@ -96,10 +108,10 @@ void publish_temperature(amqp_connection_state_t *conn, const char *message) {
     // Propriedades da mensagem
     amqp_basic_properties_t props;
     props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG;
-    props.content_type = amqp_cstring_bytes("text/plain");
+    props.content_type = amqp_cstring_bytes("application/json");
 
     // Tenta publicar a mensagem na fila
-    int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(message));
+    int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(json_message));
 
     // Verifica se a publicação foi bem-sucedida, caso contrário fecha e destrói a conexão, tenta reconectar e publicar novamente
     if(result != 0 || amqp_get_rpc_reply(*conn).reply_type != AMQP_RESPONSE_NORMAL) {
@@ -108,7 +120,7 @@ void publish_temperature(amqp_connection_state_t *conn, const char *message) {
         amqp_connection_close(*conn, AMQP_REPLY_SUCCESS);
         amqp_destroy_connection(*conn);
         *conn = connect_rabbitmq(); // Tenta conectar de novo
-        publish_temperature(conn, message);
+        publish_temperature(conn, json_message);
     }
 }
 
@@ -142,9 +154,17 @@ void read_and_publish_temperature(const char *file_path) {
         while(fgets(line, sizeof(line), file)) {
             // Remove caractere de nova linha da linha lida e coloca o '\0' no lugar
             line[strcspn(line, "\n")] = 0;
-            printf("Sending temperature: %s\n", line);
-            publish_temperature(&conn, line);
-            sleep(2); // Publica uma temperatura nova a cada 2s
+
+            // Preenche struct com valor lido
+            Data temperature = { atof(line) };
+
+            // Converte valor da struct em um JSON
+            char json_message[128];
+            sprintf(json_message, "{\"external_temperature\": %.1f}", temperature.temp);
+
+            printf("Sending external temperature: %s\n", line);
+            publish_temperature(&conn, json_message);
+            sleep(3); // Publica uma temperatura nova a cada 3s
         }
 
         // Se chegar ao fim do arquivo, volta ao início dele
