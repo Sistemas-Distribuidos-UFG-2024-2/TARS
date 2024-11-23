@@ -14,7 +14,7 @@ public class GyroscopeConsumer : IConsumer<GyroscopeMessage>
 
     public Task Consume(ConsumeContext<GyroscopeMessage> context)
     {
-        _logger.LogInformation("Gyroscopy message X: {X}, Y:{Y}, Z: {Z}", 
+        _logger.LogInformation("Gyroscope message X: {X}, Y:{Y}, Z: {Z}", 
             context.Message.X, context.Message.Y, context.Message.Z);
         return Task.CompletedTask;
     }

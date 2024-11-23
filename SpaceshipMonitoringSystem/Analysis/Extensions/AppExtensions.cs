@@ -9,7 +9,8 @@ public static class AppExtensions
 {
     public static void AddServices(this IServiceCollection services)
     {
-        services.AddScoped<IAnalysisService>();
+        services.AddScoped<IAnalysisService, AnalysisService>();
+        // services.AddScoped<INotificationService, NotificationService>();
     }
     
     public static void AddRabbitMqService(this IServiceCollection services, IConfiguration configuration)

@@ -10,9 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSerilog();
-// builder.Services.AddServices();
+builder.Services.AddServices();
 builder.Services.AddRabbitMqService(builder.Configuration);
-builder.Services.AddScoped<IAnalysisService, AnalysisService>();
 
 var app = builder.Build();
 
