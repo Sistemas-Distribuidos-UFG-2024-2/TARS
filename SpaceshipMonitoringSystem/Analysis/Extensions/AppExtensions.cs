@@ -1,6 +1,7 @@
 using Analysis.Consumers;
 using Analysis.Producers;
 using Analysis.Services;
+using Analysis.DTO;
 using MassTransit;
 
 namespace Analysis.Extensions;
@@ -10,7 +11,6 @@ public static class AppExtensions
     public static void AddServices(this IServiceCollection services)
     {
         services.AddScoped<IAnalysisService, AnalysisService>();
-        // services.AddScoped<INotificationService, NotificationService>();
     }
     
     public static void AddRabbitMqService(this IServiceCollection services, IConfiguration configuration)
@@ -37,6 +37,12 @@ public static class AppExtensions
                 {
                     host.Username(username);
                     host.Password(password);
+                });
+
+                // Exchange para alert message
+                factoryConfigurator.Message<AlertMessage>(configuration =>
+                {
+                    configuration.SetEntityName("alert-exchange");
                 });
 
                 factoryConfigurator.UseRawJsonDeserializer();
@@ -66,6 +72,6 @@ public static class AppExtensions
             });
         });
 
-        services.AddScoped<BasicProducer>();
+        services.AddScoped<IAlertProducer, AlertProducer>();
     }
 }

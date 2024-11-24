@@ -1,6 +1,8 @@
 using Houston.Consumers;
 using Houston.Producers;
+using Commom.DTO;
 using MassTransit;
+using MassTransit.RabbitMqTransport;
 
 namespace Houston.Extensions;
 
@@ -17,6 +19,7 @@ public static class AppExtensions
         services.AddMassTransit(configurator =>
         {
             configurator.AddConsumer<SpaceshipConsumer>();
+            configurator.AddConsumer<AnalysisConsumer>();
             
             configurator.UsingRabbitMq((context, factoryConfigurator) =>
             {
@@ -25,6 +28,26 @@ public static class AppExtensions
                     host.Username(username);
                     host.Password(password);
                 });
+
+                // Exchange para alert message
+                // factoryConfigurator.Message<AlertMessage>(configuration =>
+                // {
+                //     configuration.SetEntityName("alert-exchange");
+                // });
+
+                // factoryConfigurator.UseRawJsonDeserializer();
+
+                factoryConfigurator.ReceiveEndpoint("houston-alert-queue", endpoint =>
+                {
+                    endpoint.ConfigureConsumer<AnalysisConsumer>(context);
+
+                    // Vincula a fila à exchange
+                    endpoint.Bind("alert-exchange", x =>
+                    {
+                        x.ExchangeType = "fanout";
+                    });
+                });
+
                 factoryConfigurator.ReceiveEndpoint("spaceship", endpoint =>
                 {
                     endpoint.ConfigureConsumer<SpaceshipConsumer>(context);

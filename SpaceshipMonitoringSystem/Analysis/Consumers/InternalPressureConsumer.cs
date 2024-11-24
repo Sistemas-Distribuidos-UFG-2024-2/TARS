@@ -1,5 +1,6 @@
 using Analysis.DTO;
 using Analysis.Services;
+using Analysis.Producers;
 using MassTransit;
 
 namespace Analysis.Consumers;
@@ -8,13 +9,13 @@ public class InternalPressureConsumer : IConsumer<InternalPressureMessage>
 {
     private readonly ILogger<InternalPressureConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    // private readonly INotificationService _notificationService;
+    private readonly IAlertProducer _alertProducer;
 
-    public InternalPressureConsumer(ILogger<InternalPressureConsumer> logger, IAnalysisService analysisService)
+    public InternalPressureConsumer(ILogger<InternalPressureConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
     {
         _logger = logger;
         _analysisService = analysisService;
-        // _notificationService = notificationService;
+        _alertProducer = alertProducer;
     }
 
     public Task Consume(ConsumeContext<InternalPressureMessage> context)
@@ -26,10 +27,27 @@ public class InternalPressureConsumer : IConsumer<InternalPressureMessage>
         if (!isValueNormal)
         {
             // Produz uma mensagem para o serviço de notificação e para o Houston
-            _logger.LogWarning("Anomaly detected: Internal pressure {Pressure} is out of range!", context.Message.InternalPressure);
+            _logger.LogWarning("Anomaly detected: Internal pressure {Pressure} is out of range", context.Message.InternalPressure);
 
-            // Simula uma notificação enquanto ainda não tem isso implementado
-            _logger.LogInformation("Simulated Notification: Anomaly detected in Internal Pressure!");
+            var alertMessage = new AlertMessage
+            {
+                AlertType = "Internal Pressure",
+                Description = $"Anomaly detected: Internal pressure {context.Message.InternalPressure} is out of range!"
+            };
+
+             return _alertProducer.PublishAsync(alertMessage)
+                .ContinueWith(task =>
+                {
+                    // Após publicar a mensagem, loga uma notificação (não bloqueia a tarefa principal)
+                    if (task.IsCompletedSuccessfully)
+                    {
+                        _logger.LogInformation("[Analysis]: Notification sent");
+                    }
+                    else if (task.IsFaulted)
+                    {
+                        _logger.LogError(task.Exception, "[Analysis]: Failed to send notification");
+                    }
+                });
         }
         
         return Task.CompletedTask;
