@@ -1,4 +1,4 @@
-using Commom.DTO;
+using Houston.DTO;
 using MassTransit;
 
 namespace Houston.Consumers;

@@ -1,6 +1,6 @@
 using Houston.Consumers;
 using Houston.Producers;
-using Commom.DTO;
+using Houston.DTO;
 using MassTransit;
 using MassTransit.RabbitMqTransport;
 
@@ -29,23 +29,12 @@ public static class AppExtensions
                     host.Password(password);
                 });
 
-                // Exchange para alert message
-                // factoryConfigurator.Message<AlertMessage>(configuration =>
-                // {
-                //     configuration.SetEntityName("alert-exchange");
-                // });
+                factoryConfigurator.UseRawJsonSerializer();
+                factoryConfigurator.UseRawJsonDeserializer();
 
-                // factoryConfigurator.UseRawJsonDeserializer();
-
-                factoryConfigurator.ReceiveEndpoint("houston-alert-queue", endpoint =>
+                factoryConfigurator.ReceiveEndpoint("alerts", endpoint => 
                 {
                     endpoint.ConfigureConsumer<AnalysisConsumer>(context);
-
-                    // Vincula a fila à exchange
-                    endpoint.Bind("alert-exchange", x =>
-                    {
-                        x.ExchangeType = "fanout";
-                    });
                 });
 
                 factoryConfigurator.ReceiveEndpoint("spaceship", endpoint =>

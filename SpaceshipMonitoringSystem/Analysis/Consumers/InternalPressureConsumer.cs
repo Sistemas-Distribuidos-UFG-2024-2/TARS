@@ -18,7 +18,7 @@ public class InternalPressureConsumer : IConsumer<InternalPressureMessage>
         _alertProducer = alertProducer;
     }
 
-    public Task Consume(ConsumeContext<InternalPressureMessage> context)
+    public async Task Consume(ConsumeContext<InternalPressureMessage> context)
     {
         _logger.LogInformation("Internal pressure: {Pressure}", context.Message.InternalPressure);
 
@@ -35,21 +35,15 @@ public class InternalPressureConsumer : IConsumer<InternalPressureMessage>
                 Description = $"Anomaly detected: Internal pressure {context.Message.InternalPressure} is out of range!"
             };
 
-             return _alertProducer.PublishAsync(alertMessage)
-                .ContinueWith(task =>
-                {
-                    // Após publicar a mensagem, loga uma notificação (não bloqueia a tarefa principal)
-                    if (task.IsCompletedSuccessfully)
-                    {
-                        _logger.LogInformation("[Analysis]: Notification sent");
-                    }
-                    else if (task.IsFaulted)
-                    {
-                        _logger.LogError(task.Exception, "[Analysis]: Failed to send notification");
-                    }
-                });
+            try
+            {
+                await _alertProducer.PublishAsync(alertMessage);
+                _logger.LogInformation("[Analysis]: Notification sent successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[Analysis]: Failed to send notification");
+            }
         }
-        
-        return Task.CompletedTask;
     }
 }

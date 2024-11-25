@@ -39,12 +39,7 @@ public static class AppExtensions
                     host.Password(password);
                 });
 
-                // Exchange para alert message
-                factoryConfigurator.Message<AlertMessage>(configuration =>
-                {
-                    configuration.SetEntityName("alert-exchange");
-                });
-
+                factoryConfigurator.UseRawJsonSerializer();
                 factoryConfigurator.UseRawJsonDeserializer();
 
                 factoryConfigurator.ReceiveEndpoint("acceleration_queue",

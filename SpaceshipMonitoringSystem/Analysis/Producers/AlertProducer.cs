@@ -11,10 +11,11 @@ public class AlertProducer : IAlertProducer
         _bus = bus;
     }
 
+    public string QueueName => "queue:alerts";
+
     public async Task PublishAsync<T>(T message) where T : notnull
     {
-        await _bus.Publish(message);
-
-        Console.WriteLine($"[Analysis] Sent message");
+        var endpoint = await _bus.GetSendEndpoint(new Uri(QueueName));
+        await endpoint.Send(message);
     }
 }
