@@ -42,7 +42,7 @@ public static class AppExtensions
                 factoryConfigurator.UseRawJsonSerializer();
                 factoryConfigurator.UseRawJsonDeserializer();
 
-                // Exchange para alert message
+                // Exchange para a publicação das mensagens de alerta
                 factoryConfigurator.Message<AlertMessage>(configuration =>
                 {
                     configuration.SetEntityName("alerts-exchange");

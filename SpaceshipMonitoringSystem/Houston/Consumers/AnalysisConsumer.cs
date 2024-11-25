@@ -14,7 +14,7 @@ public class AnalysisConsumer : IConsumer<AlertMessage>
 
     public Task Consume(ConsumeContext<AlertMessage> context)
     {
-        _logger.LogInformation($"[Houston] Alert received: {context.Message.AlertType} - {context.Message.Description}");
+        _logger.LogInformation($"[Houston] Alert received! Type: {context.Message.Type} - Message: {context.Message.Message}");
         return Task.CompletedTask;
     }
 }

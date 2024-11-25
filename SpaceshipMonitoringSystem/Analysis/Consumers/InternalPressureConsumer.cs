@@ -26,23 +26,23 @@ public class InternalPressureConsumer : IConsumer<InternalPressureMessage>
 
         if (!isValueNormal)
         {
-            // Produz uma mensagem para o serviço de notificação e para o Houston
             _logger.LogWarning("Anomaly detected: Internal pressure {Pressure} is out of range", context.Message.InternalPressure);
 
             var alertMessage = new AlertMessage
             {
-                AlertType = "Internal Pressure",
-                Description = $"Anomaly detected: Internal pressure {context.Message.InternalPressure} is out of range!"
+                Type = "Internal Pressure",
+                Message = $"Anomaly detected: Value {context.Message.InternalPressure} is out of range."
             };
 
+            // Produz uma mensagem de alerta para o serviço de notificação e para o Houston
             try
             {
                 await _alertProducer.PublishAsync(alertMessage);
-                _logger.LogInformation("[Analysis]: Notification sent successfully");
+                _logger.LogInformation("[Analysis]: Alert message sent successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[Analysis]: Failed to send notification");
+                _logger.LogError(ex, "[Analysis]: Failed to send alert message");
             }
         }
     }

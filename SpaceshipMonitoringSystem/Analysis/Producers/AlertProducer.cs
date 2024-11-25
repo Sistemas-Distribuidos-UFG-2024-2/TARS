@@ -14,6 +14,5 @@ public class AlertProducer : IAlertProducer
     public async Task PublishAsync<T>(T message) where T : notnull
     {
         await _bus.Publish(message);
-        Console.WriteLine($"[Analysis] Sent message");
     }
 }
