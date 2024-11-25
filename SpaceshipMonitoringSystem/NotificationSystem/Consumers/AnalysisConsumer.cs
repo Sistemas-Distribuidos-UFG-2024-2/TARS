@@ -1,6 +1,5 @@
+using NotificationSystem.DTO;
 using MassTransit;
-// using NotificationSystem.DTO;
-using Analysis.DTO;
 
 namespace NotificationSystem.Consumers;
 
@@ -16,8 +15,7 @@ public class AnalysisConsumer : IConsumer<AlertMessage>
 
     public Task Consume(ConsumeContext<AlertMessage> context)
     {
-        _logger.LogInformation($"[NotificationSystem] Alert received: {context.Message.AlertType} - {context.Message.Description}");
-        
+        _logger.LogInformation($"[NotificationSystem] Alert received! Type: {context.Message.Type} - Message: {context.Message.Message}");
         return Task.CompletedTask;
     }
 }
