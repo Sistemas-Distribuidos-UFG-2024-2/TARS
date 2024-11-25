@@ -1,5 +1,6 @@
 using Analysis.DTO;
 using Analysis.Services;
+using Analysis.Producers;
 using MassTransit;
 
 namespace Analysis.Consumers;
@@ -8,45 +9,57 @@ public class GyroscopeConsumer : IConsumer<GyroscopeMessage>
 {
     private readonly ILogger<GyroscopeConsumer> _logger;
     private readonly IAnalysisService _analysisService;
+    private readonly IAlertProducer _alertProducer;
 
-    public GyroscopeConsumer(ILogger<GyroscopeConsumer> logger, IAnalysisService analysisService)
+    public GyroscopeConsumer(ILogger<GyroscopeConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
     {
         _logger = logger;
         _analysisService = analysisService;
+        _alertProducer = alertProducer;
     }
 
-    public Task Consume(ConsumeContext<GyroscopeMessage> context)
+    public async Task Consume(ConsumeContext<GyroscopeMessage> context)
     {
-        _logger.LogInformation("Gyroscope message X: {X}, Y:{Y}, Z: {Z}", 
-            context.Message.X, context.Message.Y, context.Message.Z);
+        _logger.LogInformation
+        (
+            "Gyroscope message X: {X}, Y:{Y}, Z: {Z}", 
+            context.Message.X, 
+            context.Message.Y, 
+            context.Message.Z
+        );
         
-        var isValueNormal = _analysisService.IsValueNormal(context.Message.X, -5.0, 5.0);
-
-        if (!isValueNormal) 
+        // Os 3 eixos são independentes
+        var axes = new Dictionary<string, double>
         {
-            _logger.LogWarning("Anomaly detected: Gyroscope's axis X {X} is out of range!", context.Message.X);
+            { "X", context.Message.X },
+            { "Y", context.Message.Y },
+            { "Z", context.Message.Z }
+        };
 
-            _logger.LogInformation("Simulated Notification: Anomaly detected in Gyroscope's axis X!");
-        }
-
-        isValueNormal = _analysisService.IsValueNormal(context.Message.Y, -5.0, 5.0);
-
-        if (!isValueNormal)
+        foreach (var (axis, value) in axes)
         {
-            _logger.LogWarning("Anomaly detected: Gyroscope's axis Y {Y} is out of range!", context.Message.Y);
+            var isValueNormal = _analysisService.IsValueNormal(value, -5.0, 5.0);
+            
+            if (!isValueNormal)
+            {
+                _logger.LogWarning("Anomaly detected: Gyroscope's axis {Axis} {Value} is out of range", axis, value);
 
-            _logger.LogInformation("Simulated Notification: Anomaly detected in Gyroscope's axis Y!");
+                var alertMessage = new AlertMessage
+                {
+                    Type = "Gyroscope",
+                    Message = $"Anomaly detected: Axis {axis} value {value} is out of range."
+                };
+
+                try
+                {
+                    await _alertProducer.PublishAsync(alertMessage);
+                    _logger.LogInformation("[Analysis]: Alert message sent successfully");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Analysis]: Failed to send alert message");
+                }
+            }
         }
-
-        isValueNormal = _analysisService.IsValueNormal(context.Message.Z, -5.0, 5.0);
-
-        if (!isValueNormal)
-        {
-            _logger.LogWarning("Anomaly detected: Gyroscope's axis Z {Z} is out of range!", context.Message.Z);
-
-            _logger.LogInformation("Simulated Notification: Anomaly detected in Gyroscope's axis Z!");
-        }
-        
-        return Task.CompletedTask;
     }
 }

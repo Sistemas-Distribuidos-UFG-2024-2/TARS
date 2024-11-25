@@ -1,5 +1,6 @@
 using Analysis.DTO;
 using Analysis.Services;
+using Analysis.Producers;
 using MassTransit;
 
 namespace Analysis.Consumers;
@@ -8,14 +9,16 @@ public class ExternalTemperatureConsumer : IConsumer<ExternalTemperatureMessage>
 {
     private readonly ILogger<ExternalTemperatureConsumer> _logger;
     private readonly IAnalysisService _analysisService;
+    private readonly IAlertProducer _alertProducer;
 
-    public ExternalTemperatureConsumer(ILogger<ExternalTemperatureConsumer> logger, IAnalysisService analysisService)
+    public ExternalTemperatureConsumer(ILogger<ExternalTemperatureConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
     {
         _logger = logger;
         _analysisService = analysisService;
+        _alertProducer = alertProducer;
     }
 
-    public Task Consume(ConsumeContext<ExternalTemperatureMessage> context)
+    public async Task Consume(ConsumeContext<ExternalTemperatureMessage> context)
     {
         _logger.LogInformation("External temperature: {Temp}", context.Message.Externaltemperature);
 
@@ -23,11 +26,23 @@ public class ExternalTemperatureConsumer : IConsumer<ExternalTemperatureMessage>
 
         if (!isValueNormal) 
         {
-            _logger.LogWarning("Anomaly detected: External temperature {Temp} is out of range!", context.Message.Externaltemperature);
+            _logger.LogWarning("Anomaly detected: External temperature {Temp} is out of range", context.Message.Externaltemperature);
 
-            _logger.LogInformation("Simulated Notification: Anomaly detected in External Temperature!");
+            var alertMessage = new AlertMessage
+            {
+                Type = "External Temperature",
+                Message = $"Anomaly detected: Value {context.Message.Externaltemperature} is out of range."
+            };
+
+            try
+            {
+                await _alertProducer.PublishAsync(alertMessage);
+                _logger.LogInformation("[Analysis]: Alert message sent successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[Analysis]: Failed to send alert message");
+            }
         }
-
-        return Task.CompletedTask;
     }
 }

@@ -1,5 +1,6 @@
 using Analysis.DTO;
 using Analysis.Services;
+using Analysis.Producers;
 using MassTransit;
 
 namespace Analysis.Consumers;
@@ -8,14 +9,16 @@ public class FuelPressureConsumer : IConsumer<FuelPressureMessage>
 {
     private readonly ILogger<FuelPressureConsumer> _logger;
     private readonly IAnalysisService _analysisService;
+    private readonly IAlertProducer _alertProducer;
 
-    public FuelPressureConsumer(ILogger<FuelPressureConsumer> logger, IAnalysisService analysisService)
+    public FuelPressureConsumer(ILogger<FuelPressureConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
     {
         _logger = logger;
         _analysisService = analysisService;
+        _alertProducer = alertProducer;
     }
 
-    public Task Consume(ConsumeContext<FuelPressureMessage> context)
+    public async Task Consume(ConsumeContext<FuelPressureMessage> context)
     {
         _logger.LogInformation("Fuel pressure: {Pressure}", context.Message.FuelPressure);
 
@@ -23,11 +26,23 @@ public class FuelPressureConsumer : IConsumer<FuelPressureMessage>
 
         if (!isValueNormal) 
         {
-            _logger.LogWarning("Anomaly detected: Fuel pressure {Pressure} is out of range!", context.Message.FuelPressure);
+            _logger.LogWarning("Anomaly detected: Fuel pressure {Pressure} is out of range", context.Message.FuelPressure);
 
-            _logger.LogInformation("Simulated Notification: Anomaly detected in Spaceship Fuel Pressure!");
+            var alertMessage = new AlertMessage
+            {
+                Type = "Fuel Pressure",
+                Message = $"Anomaly detected: Value {context.Message.FuelPressure} is out of range."
+            };
+
+            try
+            {
+                await _alertProducer.PublishAsync(alertMessage);
+                _logger.LogInformation("[Analysis]: Alert message sent successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[Analysis]: Failed to send alert message");
+            }
         }
-
-        return Task.CompletedTask;
     }
 }
