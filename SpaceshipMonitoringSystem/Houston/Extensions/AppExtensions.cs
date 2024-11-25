@@ -32,10 +32,20 @@ public static class AppExtensions
                 factoryConfigurator.UseRawJsonSerializer();
                 factoryConfigurator.UseRawJsonDeserializer();
 
-                factoryConfigurator.ReceiveEndpoint("alerts", endpoint => 
+                factoryConfigurator.ReceiveEndpoint("houston-alerts-queue", endpoint => 
                 {
                     endpoint.ConfigureConsumer<AnalysisConsumer>(context);
+                    // Vincula a fila à exchange
+                    endpoint.Bind("alerts-exchange", x =>
+                    {
+                        x.ExchangeType = "fanout";
+                    });
                 });
+
+                // factoryConfigurator.ReceiveEndpoint("alerts", endpoint => 
+                // {
+                //     endpoint.ConfigureConsumer<AnalysisConsumer>(context);
+                // });
 
                 factoryConfigurator.ReceiveEndpoint("spaceship", endpoint =>
                 {

@@ -42,6 +42,12 @@ public static class AppExtensions
                 factoryConfigurator.UseRawJsonSerializer();
                 factoryConfigurator.UseRawJsonDeserializer();
 
+                // Exchange para alert message
+                factoryConfigurator.Message<AlertMessage>(configuration =>
+                {
+                    configuration.SetEntityName("alerts-exchange");
+                });
+
                 factoryConfigurator.ReceiveEndpoint("acceleration_queue",
                     endpoint => { endpoint.ConfigureConsumer<AccelerationConsumer>(context); });
 
