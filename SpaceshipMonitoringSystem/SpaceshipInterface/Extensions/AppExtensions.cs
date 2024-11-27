@@ -1,4 +1,5 @@
 using MassTransit;
+using MassTransit.RabbitMqTransport;
 using SpaceshipInterface.Consumers;
 using SpaceshipInterface.Producers;
 
@@ -25,6 +26,10 @@ public static class AppExtensions
                     host.Username(username);
                     host.Password(password);
                 });
+
+                factoryConfigurator.UseRawJsonSerializer();
+                factoryConfigurator.UseRawJsonDeserializer();
+                
                 factoryConfigurator.ReceiveEndpoint("houston", endpoint =>
                 {
                     endpoint.ConfigureConsumer<HoustonConsumer>(context);
