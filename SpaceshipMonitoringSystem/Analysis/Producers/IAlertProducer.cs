@@ -1,7 +1,6 @@
 namespace Analysis.Producers;
 
-public interface IBasicProducer
+public interface IAlertProducer
 {
-    string QueueName { get; }
     Task PublishAsync<T>(T message) where T : notnull;
 }

@@ -1,6 +1,8 @@
-using MassTransit;
 using NotificationSystem.Consumers;
 using NotificationSystem.Producers;
+using NotificationSystem.DTO;
+using MassTransit;
+using MassTransit.RabbitMqTransport;
 
 namespace NotificationSystem.Extensions;
 
@@ -17,6 +19,7 @@ public static class AppExtensions
         services.AddMassTransit(configurator =>
         {
             configurator.AddConsumer<BasicConsumer>();
+            configurator.AddConsumer<AnalysisConsumer>();
             
             configurator.UsingRabbitMq((context, factoryConfigurator) =>
             {
@@ -25,6 +28,20 @@ public static class AppExtensions
                     host.Username(username);
                     host.Password(password);
                 });
+
+                factoryConfigurator.UseRawJsonSerializer();
+                factoryConfigurator.UseRawJsonDeserializer();
+
+                // Configura a fila para consumir dados da exchange de alerta
+                factoryConfigurator.ReceiveEndpoint("notification-alerts-queue", endpoint =>
+                {
+                    endpoint.ConfigureConsumer<AnalysisConsumer>(context);
+                    endpoint.Bind("alerts-exchange", x =>
+                    {
+                        x.ExchangeType = "fanout";
+                    });
+                });
+
                 factoryConfigurator.ReceiveEndpoint("basic-queue", endpoint =>
                 {
                     endpoint.ConfigureConsumer<BasicConsumer>(context);

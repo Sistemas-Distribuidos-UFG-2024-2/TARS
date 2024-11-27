@@ -54,7 +54,7 @@ services:
   analysisservice:
     container_name: analysisservice
     build:
-      context: ./AnalysisService
+      context: ./Analysis
       dockerfile: Dockerfile
     ports:
       - 5202:8080

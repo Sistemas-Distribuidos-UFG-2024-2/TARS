@@ -1,5 +1,6 @@
 using Analysis.Extensions;
 using Analysis.Utils;
+using Analysis.Services;
 using Serilog;
 
 SerilogConfiguration.ConfigureLogger();
