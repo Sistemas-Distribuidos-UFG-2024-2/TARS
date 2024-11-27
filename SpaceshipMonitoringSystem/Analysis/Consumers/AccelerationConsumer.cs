@@ -26,7 +26,7 @@ public class AccelerationConsumer : IConsumer<AccelerationMessage>
 
         if (!isValueNormal)
         {
-            _logger.LogWarning("Anomaly detected: Acceleration {Acceleration} is out of range", context.Message.Acceleration);
+            _logger.LogWarning("Anomaly detected: Acceleration value {Acceleration} is out of range", context.Message.Acceleration);
 
             var alertMessage = new AlertMessage
             {
@@ -37,11 +37,11 @@ public class AccelerationConsumer : IConsumer<AccelerationMessage>
             try
             {
                 await _alertProducer.PublishAsync(alertMessage);
-                _logger.LogInformation("[Analysis]: Alert message sent successfully");
+                _logger.LogInformation("Alert message sent successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[Analysis]: Failed to send alert message");
+                _logger.LogError(ex, "Failed to send alert message");
             }
         }
     }

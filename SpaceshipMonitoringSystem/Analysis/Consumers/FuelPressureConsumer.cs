@@ -26,7 +26,7 @@ public class FuelPressureConsumer : IConsumer<FuelPressureMessage>
 
         if (!isValueNormal) 
         {
-            _logger.LogWarning("Anomaly detected: Fuel pressure {Pressure} is out of range", context.Message.FuelPressure);
+            _logger.LogWarning("Anomaly detected: Fuel pressure value {Pressure} is out of range", context.Message.FuelPressure);
 
             var alertMessage = new AlertMessage
             {
@@ -37,11 +37,11 @@ public class FuelPressureConsumer : IConsumer<FuelPressureMessage>
             try
             {
                 await _alertProducer.PublishAsync(alertMessage);
-                _logger.LogInformation("[Analysis]: Alert message sent successfully");
+                _logger.LogInformation("Alert message sent successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[Analysis]: Failed to send alert message");
+                _logger.LogError(ex, "Failed to send alert message");
             }
         }
     }

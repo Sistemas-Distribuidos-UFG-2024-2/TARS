@@ -42,7 +42,7 @@ public class GyroscopeConsumer : IConsumer<GyroscopeMessage>
             
             if (!isValueNormal)
             {
-                _logger.LogWarning("Anomaly detected: Gyroscope's axis {Axis} {Value} is out of range", axis, value);
+                _logger.LogWarning("Anomaly detected: Gyroscope's axis {Axis} value {Value} is out of range", axis, value);
 
                 var alertMessage = new AlertMessage
                 {
@@ -53,11 +53,11 @@ public class GyroscopeConsumer : IConsumer<GyroscopeMessage>
                 try
                 {
                     await _alertProducer.PublishAsync(alertMessage);
-                    _logger.LogInformation("[Analysis]: Alert message sent successfully");
+                    _logger.LogInformation("Alert message sent successfully");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "[Analysis]: Failed to send alert message");
+                    _logger.LogError(ex, "Failed to send alert message");
                 }
             }
         }

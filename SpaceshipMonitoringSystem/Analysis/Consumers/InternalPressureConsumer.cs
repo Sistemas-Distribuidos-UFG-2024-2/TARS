@@ -26,7 +26,7 @@ public class InternalPressureConsumer : IConsumer<InternalPressureMessage>
 
         if (!isValueNormal)
         {
-            _logger.LogWarning("Anomaly detected: Internal pressure {Pressure} is out of range", context.Message.InternalPressure);
+            _logger.LogWarning("Anomaly detected: Internal pressure value {Pressure} is out of range", context.Message.InternalPressure);
 
             var alertMessage = new AlertMessage
             {
@@ -38,11 +38,11 @@ public class InternalPressureConsumer : IConsumer<InternalPressureMessage>
             try
             {
                 await _alertProducer.PublishAsync(alertMessage);
-                _logger.LogInformation("[Analysis]: Alert message sent successfully");
+                _logger.LogInformation("Alert message sent successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[Analysis]: Failed to send alert message");
+                _logger.LogError(ex, "Failed to send alert message");
             }
         }
     }

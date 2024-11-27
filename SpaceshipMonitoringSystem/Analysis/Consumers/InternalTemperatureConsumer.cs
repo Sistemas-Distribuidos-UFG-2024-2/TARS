@@ -7,11 +7,11 @@ namespace Analysis.Consumers;
 
 public class InternalTemperatureConsumer : IConsumer<InternalTemperatureMessage>
 {
-    private readonly ILogger<InternalPressureConsumer> _logger;
+    private readonly ILogger<InternalTemperatureConsumer> _logger;
     private readonly IAnalysisService _analysisService;
     private readonly IAlertProducer _alertProducer;
 
-    public InternalTemperatureConsumer(ILogger<InternalPressureConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
+    public InternalTemperatureConsumer(ILogger<InternalTemperatureConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
     {
         _logger = logger;
         _analysisService = analysisService;
@@ -26,7 +26,7 @@ public class InternalTemperatureConsumer : IConsumer<InternalTemperatureMessage>
 
         if (!isValueNormal) 
         {
-            _logger.LogWarning("Anomaly detected: Internal temperature {Temp} is out of range", context.Message.InternalTemperature );
+            _logger.LogWarning("Anomaly detected: Internal temperature value {Temp} is out of range", context.Message.InternalTemperature );
 
             var alertMessage = new AlertMessage
             {
@@ -37,11 +37,11 @@ public class InternalTemperatureConsumer : IConsumer<InternalTemperatureMessage>
             try
             {
                 await _alertProducer.PublishAsync(alertMessage);
-                _logger.LogInformation("[Analysis]: Alert message sent successfully");
+                _logger.LogInformation("Alert message sent successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[Analysis]: Failed to send alert message");
+                _logger.LogError(ex, "Failed to send alert message");
             }
         }
     }

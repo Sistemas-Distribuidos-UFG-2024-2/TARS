@@ -26,7 +26,7 @@ public class ExternalTemperatureConsumer : IConsumer<ExternalTemperatureMessage>
 
         if (!isValueNormal) 
         {
-            _logger.LogWarning("Anomaly detected: External temperature {Temp} is out of range", context.Message.Externaltemperature);
+            _logger.LogWarning("Anomaly detected: External temperature value {Temp} is out of range", context.Message.Externaltemperature);
 
             var alertMessage = new AlertMessage
             {
@@ -37,11 +37,11 @@ public class ExternalTemperatureConsumer : IConsumer<ExternalTemperatureMessage>
             try
             {
                 await _alertProducer.PublishAsync(alertMessage);
-                _logger.LogInformation("[Analysis]: Alert message sent successfully");
+                _logger.LogInformation("Alert message sent successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[Analysis]: Failed to send alert message");
+                _logger.LogError(ex, "Failed to send alert message");
             }
         }
     }
