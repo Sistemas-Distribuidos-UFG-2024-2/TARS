@@ -1,8 +1,9 @@
 using MassTransit;
+using Analysis.DTO;
 
 namespace Analysis.Producers;
 
-public class AlertProducer : IAlertProducer
+public class AlertProducer : IBasicProducer<AlertMessage>
 {
     private readonly IBus _bus;
 
@@ -11,7 +12,7 @@ public class AlertProducer : IAlertProducer
         _bus = bus;
     }
 
-    public async Task PublishAsync<T>(T message) where T : notnull
+    public async Task PublishAsync(AlertMessage message)
     {
         await _bus.Publish(message);
     }

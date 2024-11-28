@@ -9,9 +9,9 @@ public class InternalPressureConsumer : IConsumer<InternalPressureMessage>
 {
     private readonly ILogger<InternalPressureConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    private readonly IAlertProducer _alertProducer;
+    private readonly IBasicProducer<AlertMessage> _alertProducer;
 
-    public InternalPressureConsumer(ILogger<InternalPressureConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
+    public InternalPressureConsumer(ILogger<InternalPressureConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> alertProducer)
     {
         _logger = logger;
         _analysisService = analysisService;

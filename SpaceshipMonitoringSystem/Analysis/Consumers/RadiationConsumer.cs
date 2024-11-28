@@ -9,9 +9,9 @@ public class RadiationConsumer : IConsumer<RadiationMessage>
 {
     private readonly ILogger<RadiationConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    private readonly IAlertProducer _alertProducer;
+    private readonly IBasicProducer<AlertMessage> _alertProducer;
 
-    public RadiationConsumer(ILogger<RadiationConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
+    public RadiationConsumer(ILogger<RadiationConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> alertProducer)
     {
         _logger = logger;
         _analysisService = analysisService;

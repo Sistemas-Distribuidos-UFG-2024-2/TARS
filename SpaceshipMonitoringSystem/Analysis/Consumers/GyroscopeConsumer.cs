@@ -9,9 +9,9 @@ public class GyroscopeConsumer : IConsumer<GyroscopeMessage>
 {
     private readonly ILogger<GyroscopeConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    private readonly IAlertProducer _alertProducer;
+    private readonly IBasicProducer<AlertMessage> _alertProducer;
 
-    public GyroscopeConsumer(ILogger<GyroscopeConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
+    public GyroscopeConsumer(ILogger<GyroscopeConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> alertProducer)
     {
         _logger = logger;
         _analysisService = analysisService;

@@ -9,9 +9,9 @@ public class AccelerationConsumer : IConsumer<AccelerationMessage>
 {
     private readonly ILogger<AccelerationConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    private readonly IAlertProducer _alertProducer;
+    private readonly IBasicProducer<AlertMessage> _alertProducer;
 
-    public AccelerationConsumer(ILogger<AccelerationConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
+    public AccelerationConsumer(ILogger<AccelerationConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> alertProducer)
     {
         _logger = logger;
         _analysisService = analysisService;

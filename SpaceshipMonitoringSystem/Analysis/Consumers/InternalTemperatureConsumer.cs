@@ -9,9 +9,9 @@ public class InternalTemperatureConsumer : IConsumer<InternalTemperatureMessage>
 {
     private readonly ILogger<InternalTemperatureConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    private readonly IAlertProducer _alertProducer;
+    private readonly IBasicProducer<AlertMessage> _alertProducer;
 
-    public InternalTemperatureConsumer(ILogger<InternalTemperatureConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
+    public InternalTemperatureConsumer(ILogger<InternalTemperatureConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> alertProducer)
     {
         _logger = logger;
         _analysisService = analysisService;

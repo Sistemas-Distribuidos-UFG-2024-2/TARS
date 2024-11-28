@@ -9,9 +9,9 @@ public class FuelPressureConsumer : IConsumer<FuelPressureMessage>
 {
     private readonly ILogger<FuelPressureConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    private readonly IAlertProducer _alertProducer;
+    private readonly IBasicProducer<AlertMessage> _alertProducer;
 
-    public FuelPressureConsumer(ILogger<FuelPressureConsumer> logger, IAnalysisService analysisService, IAlertProducer alertProducer)
+    public FuelPressureConsumer(ILogger<FuelPressureConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> alertProducer)
     {
         _logger = logger;
         _analysisService = analysisService;
