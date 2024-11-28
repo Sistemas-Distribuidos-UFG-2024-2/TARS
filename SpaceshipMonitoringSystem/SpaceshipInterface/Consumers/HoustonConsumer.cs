@@ -14,7 +14,7 @@ public class HoustonConsumer : IConsumer<HoustonMessage>
 
     public Task Consume(ConsumeContext<HoustonMessage> context)
     {
-        _logger.LogInformation("[{SentTime:HH:mm:ss}] Spaceship: {Message}", context.SentTime.ToString(), context.Message.Text);
+        _logger.LogInformation("[{SentTime:HH:mm:ss}] Houston: {Message}", context.SentTime.ToString(), context.Message.Text);
         return Task.CompletedTask;
     }
 }

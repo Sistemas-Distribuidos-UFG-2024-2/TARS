@@ -42,7 +42,7 @@ public static class AppExtensions
                     });
                 });
 
-                factoryConfigurator.ReceiveEndpoint("spaceship", endpoint =>
+                factoryConfigurator.ReceiveEndpoint("houston", endpoint =>
                 {
                     endpoint.ConfigureConsumer<SpaceshipConsumer>(context);
                 });

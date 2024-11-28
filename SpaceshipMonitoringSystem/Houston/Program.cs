@@ -23,9 +23,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseSerilogRequestLogging();
 
-app.MapPost("api/spaceship", async (string text, SpaceshipProducer producer) =>
+// Usando 'string text' o texto é enviado na URL da requisição como uma query, e não aceita o envio da mensagem no body da requisição como um json
+// Exemplo: http://localhost:5008/api/spaceship?text="Olá humano"
+app.MapPost("api/spaceship", async (SpaceshipMessage message, SpaceshipProducer producer) =>
 {
-   await producer.PublishAsync(new SpaceshipMessage(text));
+   await producer.PublishAsync(message);
    return Results.Ok("Message published");
 });
 

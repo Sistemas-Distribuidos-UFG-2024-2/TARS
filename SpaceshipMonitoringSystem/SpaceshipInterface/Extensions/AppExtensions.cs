@@ -30,7 +30,7 @@ public static class AppExtensions
                 factoryConfigurator.UseRawJsonSerializer();
                 factoryConfigurator.UseRawJsonDeserializer();
                 
-                factoryConfigurator.ReceiveEndpoint("houston", endpoint =>
+                factoryConfigurator.ReceiveEndpoint("spaceship", endpoint =>
                 {
                     endpoint.ConfigureConsumer<HoustonConsumer>(context);
                 });
