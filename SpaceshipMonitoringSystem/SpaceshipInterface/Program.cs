@@ -23,9 +23,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseSerilogRequestLogging();
 
-app.MapPost("api/houston", async (string text, HoustonProducer producer) =>
+app.MapPost("api/houston", async (HoustonMessage message, HoustonProducer producer) =>
 {
-    await producer.PublishAsync(new HoustonMessage(text));
+    await producer.PublishAsync(message);
     return Results.Ok("Message published");
 });
 
