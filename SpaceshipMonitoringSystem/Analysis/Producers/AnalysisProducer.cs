@@ -3,11 +3,11 @@ using Analysis.DTO;
 
 namespace Analysis.Producers;
 
-public class AlertProducer : IBasicProducer<AlertMessage>
+public class AnalysisProducer : IBasicProducer<AlertMessage>
 {
     private readonly IBus _bus;
 
-    public AlertProducer(IBus bus)
+    public AnalysisProducer(IBus bus)
     {
         _bus = bus;
     }

@@ -73,6 +73,6 @@ public static class AppExtensions
             });
         });
 
-        services.AddScoped<IBasicProducer<AlertMessage>, AlertProducer>();
+        services.AddScoped<IBasicProducer<AlertMessage>, AnalysisProducer>();
     }
 }

@@ -9,13 +9,13 @@ public class InternalPressureConsumer : IConsumer<InternalPressureMessage>
 {
     private readonly ILogger<InternalPressureConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    private readonly IBasicProducer<AlertMessage> _alertProducer;
+    private readonly IBasicProducer<AlertMessage> _analysisProducer;
 
-    public InternalPressureConsumer(ILogger<InternalPressureConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> alertProducer)
+    public InternalPressureConsumer(ILogger<InternalPressureConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> analysisProducer)
     {
         _logger = logger;
         _analysisService = analysisService;
-        _alertProducer = alertProducer;
+        _analysisProducer = analysisProducer;
     }
 
     public async Task Consume(ConsumeContext<InternalPressureMessage> context)
@@ -37,7 +37,7 @@ public class InternalPressureConsumer : IConsumer<InternalPressureMessage>
             // Produz uma mensagem de alerta para o serviço de notificação e para o Houston
             try
             {
-                await _alertProducer.PublishAsync(alertMessage);
+                await _analysisProducer.PublishAsync(alertMessage);
                 _logger.LogInformation("Alert message sent successfully");
             }
             catch (Exception ex)

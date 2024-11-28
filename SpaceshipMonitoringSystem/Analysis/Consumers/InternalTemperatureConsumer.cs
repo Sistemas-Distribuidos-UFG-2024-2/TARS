@@ -9,13 +9,13 @@ public class InternalTemperatureConsumer : IConsumer<InternalTemperatureMessage>
 {
     private readonly ILogger<InternalTemperatureConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    private readonly IBasicProducer<AlertMessage> _alertProducer;
+    private readonly IBasicProducer<AlertMessage> _analysisProducer;
 
-    public InternalTemperatureConsumer(ILogger<InternalTemperatureConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> alertProducer)
+    public InternalTemperatureConsumer(ILogger<InternalTemperatureConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> analysisProducer)
     {
         _logger = logger;
         _analysisService = analysisService;
-        _alertProducer = alertProducer;
+        _analysisProducer = analysisProducer;
     }
 
     public async Task Consume(ConsumeContext<InternalTemperatureMessage> context)
@@ -36,7 +36,7 @@ public class InternalTemperatureConsumer : IConsumer<InternalTemperatureMessage>
 
             try
             {
-                await _alertProducer.PublishAsync(alertMessage);
+                await _analysisProducer.PublishAsync(alertMessage);
                 _logger.LogInformation("Alert message sent successfully");
             }
             catch (Exception ex)

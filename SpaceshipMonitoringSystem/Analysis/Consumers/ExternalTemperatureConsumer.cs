@@ -9,13 +9,13 @@ public class ExternalTemperatureConsumer : IConsumer<ExternalTemperatureMessage>
 {
     private readonly ILogger<ExternalTemperatureConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    private readonly IBasicProducer<AlertMessage> _alertProducer;
+    private readonly IBasicProducer<AlertMessage> _analysisProducer;
 
-    public ExternalTemperatureConsumer(ILogger<ExternalTemperatureConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> alertProducer)
+    public ExternalTemperatureConsumer(ILogger<ExternalTemperatureConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> analysisProducer)
     {
         _logger = logger;
         _analysisService = analysisService;
-        _alertProducer = alertProducer;
+        _analysisProducer = analysisProducer;
     }
 
     public async Task Consume(ConsumeContext<ExternalTemperatureMessage> context)
@@ -36,7 +36,7 @@ public class ExternalTemperatureConsumer : IConsumer<ExternalTemperatureMessage>
 
             try
             {
-                await _alertProducer.PublishAsync(alertMessage);
+                await _analysisProducer.PublishAsync(alertMessage);
                 _logger.LogInformation("Alert message sent successfully");
             }
             catch (Exception ex)

@@ -9,13 +9,13 @@ public class RadiationConsumer : IConsumer<RadiationMessage>
 {
     private readonly ILogger<RadiationConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    private readonly IBasicProducer<AlertMessage> _alertProducer;
+    private readonly IBasicProducer<AlertMessage> _analysisProducer;
 
-    public RadiationConsumer(ILogger<RadiationConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> alertProducer)
+    public RadiationConsumer(ILogger<RadiationConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> analysisProducer)
     {
         _logger = logger;
         _analysisService = analysisService;
-        _alertProducer = alertProducer;
+        _analysisProducer = analysisProducer;
     }
 
     public async Task Consume(ConsumeContext<RadiationMessage> context)
@@ -36,7 +36,7 @@ public class RadiationConsumer : IConsumer<RadiationMessage>
 
             try
             {
-                await _alertProducer.PublishAsync(alertMessage);
+                await _analysisProducer.PublishAsync(alertMessage);
                 _logger.LogInformation("Alert message sent successfully");
             }
             catch (Exception ex)

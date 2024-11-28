@@ -9,13 +9,13 @@ public class GyroscopeConsumer : IConsumer<GyroscopeMessage>
 {
     private readonly ILogger<GyroscopeConsumer> _logger;
     private readonly IAnalysisService _analysisService;
-    private readonly IBasicProducer<AlertMessage> _alertProducer;
+    private readonly IBasicProducer<AlertMessage> _analysisProducer;
 
-    public GyroscopeConsumer(ILogger<GyroscopeConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> alertProducer)
+    public GyroscopeConsumer(ILogger<GyroscopeConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> analysisProducer)
     {
         _logger = logger;
         _analysisService = analysisService;
-        _alertProducer = alertProducer;
+        _analysisProducer = analysisProducer;
     }
 
     public async Task Consume(ConsumeContext<GyroscopeMessage> context)
@@ -52,7 +52,7 @@ public class GyroscopeConsumer : IConsumer<GyroscopeMessage>
 
                 try
                 {
-                    await _alertProducer.PublishAsync(alertMessage);
+                    await _analysisProducer.PublishAsync(alertMessage);
                     _logger.LogInformation("Alert message sent successfully");
                 }
                 catch (Exception ex)
