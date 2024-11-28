@@ -20,18 +20,18 @@ public class FuelPressureConsumer : IConsumer<FuelPressureMessage>
 
     public async Task Consume(ConsumeContext<FuelPressureMessage> context)
     {
-        _logger.LogInformation("Fuel pressure: {Pressure}", context.Message.FuelPressure);
+        _logger.LogInformation("Fuel pressure: {Pressure} kPa", context.Message.FuelPressure);
 
         var isValueNormal = _analysisService.IsValueNormal(context.Message.FuelPressure, 50.0, 150.0);
 
         if (!isValueNormal) 
         {
-            _logger.LogWarning("Anomaly detected: Fuel pressure value {Pressure} is out of range", context.Message.FuelPressure);
+            _logger.LogWarning("Anomaly detected: Fuel pressure value {Pressure} kPa is out of range", context.Message.FuelPressure);
 
             var alertMessage = new AlertMessage
             {
                 Type = "Fuel Pressure",
-                Message = $"Anomaly detected: Value {context.Message.FuelPressure} is out of range."
+                Message = $"Anomaly detected: Value {context.Message.FuelPressure} kPa is out of range."
             };
 
             try

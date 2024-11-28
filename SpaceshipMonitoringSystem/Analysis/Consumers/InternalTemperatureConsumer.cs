@@ -20,18 +20,18 @@ public class InternalTemperatureConsumer : IConsumer<InternalTemperatureMessage>
 
     public async Task Consume(ConsumeContext<InternalTemperatureMessage> context)
     {
-        _logger.LogInformation("Internal temperature: {Temp}", context.Message.InternalTemperature);
+        _logger.LogInformation("Internal temperature: {Temp} ºC", context.Message.InternalTemperature);
 
         var isValueNormal = _analysisService.IsValueNormal(context.Message.InternalTemperature, 12.0, 25.0);
 
         if (!isValueNormal) 
         {
-            _logger.LogWarning("Anomaly detected: Internal temperature value {Temp} is out of range", context.Message.InternalTemperature );
+            _logger.LogWarning("Anomaly detected: Internal temperature value {Temp} ºC is out of range", context.Message.InternalTemperature );
 
             var alertMessage = new AlertMessage
             {
                 Type = "Internal Temperature",
-                Message = $"Anomaly detected: Value {context.Message.InternalTemperature} is out of range."
+                Message = $"Anomaly detected: Value {context.Message.InternalTemperature} ºC is out of range."
             };
 
             try

@@ -20,18 +20,18 @@ public class InternalPressureConsumer : IConsumer<InternalPressureMessage>
 
     public async Task Consume(ConsumeContext<InternalPressureMessage> context)
     {
-        _logger.LogInformation("Internal pressure: {Pressure}", context.Message.InternalPressure);
+        _logger.LogInformation("Internal pressure: {Pressure} kPa", context.Message.InternalPressure);
 
         var isValueNormal = _analysisService.IsValueNormal(context.Message.InternalPressure, 100.0, 103.0);
 
         if (!isValueNormal)
         {
-            _logger.LogWarning("Anomaly detected: Internal pressure value {Pressure} is out of range", context.Message.InternalPressure);
+            _logger.LogWarning("Anomaly detected: Internal pressure value {Pressure} kPa is out of range", context.Message.InternalPressure);
 
             var alertMessage = new AlertMessage
             {
                 Type = "Internal Pressure",
-                Message = $"Anomaly detected: Value {context.Message.InternalPressure} is out of range."
+                Message = $"Anomaly detected: Value {context.Message.InternalPressure} kPa is out of range."
             };
 
             // Produz uma mensagem de alerta para o serviço de notificação e para o Houston

@@ -22,7 +22,7 @@ public class GyroscopeConsumer : IConsumer<GyroscopeMessage>
     {
         _logger.LogInformation
         (
-            "Gyroscope message X: {X}, Y:{Y}, Z: {Z}", 
+            "Gyroscope message X: {X} °/s, Y:{Y} °/s, Z: {Z} °/s", 
             context.Message.X, 
             context.Message.Y, 
             context.Message.Z
@@ -42,12 +42,12 @@ public class GyroscopeConsumer : IConsumer<GyroscopeMessage>
             
             if (!isValueNormal)
             {
-                _logger.LogWarning("Anomaly detected: Gyroscope's axis {Axis} value {Value} is out of range", axis, value);
+                _logger.LogWarning("Anomaly detected: Gyroscope's axis {Axis} value {Value} °/s is out of range", axis, value);
 
                 var alertMessage = new AlertMessage
                 {
                     Type = "Gyroscope",
-                    Message = $"Anomaly detected: Axis {axis} value {value} is out of range."
+                    Message = $"Anomaly detected: Axis {axis} value {value} °/s is out of range."
                 };
 
                 try

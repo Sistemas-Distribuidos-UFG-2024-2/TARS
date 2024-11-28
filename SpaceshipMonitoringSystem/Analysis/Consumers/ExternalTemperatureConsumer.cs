@@ -20,18 +20,18 @@ public class ExternalTemperatureConsumer : IConsumer<ExternalTemperatureMessage>
 
     public async Task Consume(ConsumeContext<ExternalTemperatureMessage> context)
     {
-        _logger.LogInformation("External temperature: {Temp}", context.Message.Externaltemperature);
+        _logger.LogInformation("External temperature: {Temp} ºC", context.Message.Externaltemperature);
 
         var isValueNormal = _analysisService.IsValueNormal(context.Message.Externaltemperature, -150.0, 150.0);
 
         if (!isValueNormal) 
         {
-            _logger.LogWarning("Anomaly detected: External temperature value {Temp} is out of range", context.Message.Externaltemperature);
+            _logger.LogWarning("Anomaly detected: External temperature value {Temp} ºC is out of range", context.Message.Externaltemperature);
 
             var alertMessage = new AlertMessage
             {
                 Type = "External Temperature",
-                Message = $"Anomaly detected: Value {context.Message.Externaltemperature} is out of range."
+                Message = $"Anomaly detected: Value {context.Message.Externaltemperature} ºC is out of range."
             };
 
             try

@@ -20,18 +20,18 @@ public class AccelerationConsumer : IConsumer<AccelerationMessage>
 
     public async Task Consume(ConsumeContext<AccelerationMessage> context)
     {
-        _logger.LogInformation("Acceleration: {Acceleration}", context.Message.Acceleration);
+        _logger.LogInformation("Acceleration: {Acceleration} µm", context.Message.Acceleration);
 
         var isValueNormal = _analysisService.IsValueNormal(context.Message.Acceleration, -1.0, 1.0);
 
         if (!isValueNormal)
         {
-            _logger.LogWarning("Anomaly detected: Acceleration value {Acceleration} is out of range", context.Message.Acceleration);
+            _logger.LogWarning("Anomaly detected: Acceleration value {Acceleration} µm is out of range", context.Message.Acceleration);
 
             var alertMessage = new AlertMessage
             {
                 Type = "Acceleration",
-                Message = $"Anomaly detected: Value {context.Message.Acceleration} is out of range."
+                Message = $"Anomaly detected: Value {context.Message.Acceleration} µm is out of range."
             };
 
             try
