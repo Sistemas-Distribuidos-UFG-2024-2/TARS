@@ -2,6 +2,7 @@ using MassTransit;
 using MassTransit.RabbitMqTransport;
 using SpaceshipInterface.Consumers;
 using SpaceshipInterface.Producers;
+using SpaceshipInterface.DTO;
 
 namespace SpaceshipInterface.Extensions;
 
@@ -18,6 +19,7 @@ public static class AppExtensions
         services.AddMassTransit(configurator =>
         {
             configurator.AddConsumer<HoustonConsumer>();
+            configurator.AddConsumer<AnalysisConsumer>();
             
             configurator.UsingRabbitMq((context, factoryConfigurator) =>
             {
@@ -29,6 +31,16 @@ public static class AppExtensions
 
                 factoryConfigurator.UseRawJsonSerializer();
                 factoryConfigurator.UseRawJsonDeserializer();
+
+                // Configura a fila para consumir dados da exchange de alerta
+                factoryConfigurator.ReceiveEndpoint("spaceship-alerts-queue", endpoint =>
+                {
+                    endpoint.ConfigureConsumer<AnalysisConsumer>(context);
+                    endpoint.Bind("alerts-exchange", x =>
+                    {
+                        x.ExchangeType = "fanout";
+                    });
+                });
                 
                 factoryConfigurator.ReceiveEndpoint("spaceship", endpoint =>
                 {
