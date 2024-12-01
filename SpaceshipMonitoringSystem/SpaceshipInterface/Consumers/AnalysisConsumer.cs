@@ -12,7 +12,6 @@ public class AnalysisConsumer : IConsumer<AlertMessage>
         _logger = logger;
     }
 
-
     public Task Consume(ConsumeContext<AlertMessage> context)
     {
         _logger.LogCritical($"NEW ALERT RECEIVED!!! {context.Message.Message} [{context.Message.Type}]");
