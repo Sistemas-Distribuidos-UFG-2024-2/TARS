@@ -3,6 +3,7 @@ using SpaceshipInterface.DTO;
 using SpaceshipInterface.Extensions;
 using SpaceshipInterface.Producers;
 using SpaceshipInterface.Utils;
+using SpaceshipInterface.Sockets;
 
 SerilogConfiguration.ConfigureLogger();
 
@@ -30,5 +31,8 @@ app.MapPost("api/houston", async (HoustonMessage message, HoustonProducer produc
 });
 
 app.MapGet("/", () => Results.Ok("Spaceship interface up and running..."));
+
+var ExTempServer = new ExternalTemperatureServer(5101);
+_ = ExTempServer.StartAsync();
 
 app.Run();

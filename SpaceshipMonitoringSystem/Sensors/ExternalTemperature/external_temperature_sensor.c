@@ -4,11 +4,15 @@
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #define PORT 5672
 // Nome da fila em que o sensor publicará as mensagens
 #define QUEUE_NAME "external_temperature_queue"
 #define FILE_PATH "external_temperatures.txt"
+#define SOCKET_SERVER_IP "127.0.0.1"
+#define SOCKET_SERVER_PORT 5101
 
 typedef struct {
     float temp;
@@ -92,6 +96,31 @@ amqp_connection_state_t connect_rabbitmq() {
     }
 }
 
+// Função para conectar ao servidor de socket da nave espacial
+int connect_to_socket_server() {
+
+    // TODO: Fazer com que ele tente criar um socket a todo custo
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        printf("Error creating socket\n");
+        exit(1);
+    }
+
+    struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(SOCKET_SERVER_PORT);
+    server_addr.sin_addr.s_addr = inet_addr(SOCKET_SERVER_IP);
+
+    if(connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        perror("Error connecting to socket server");
+        close(sock);
+        exit(1);
+    }
+
+    printf("Connected to spaceship interface via socket\n");
+    return sock;
+}
+
 // Função para enviar a mensagem com a temperatura para a fila do RabbitMQ
 void publish_temperature(amqp_connection_state_t *conn, const char *json_message) {
     
@@ -124,6 +153,13 @@ void publish_temperature(amqp_connection_state_t *conn, const char *json_message
     }
 }
 
+// Envia a mensagem JSON para a nave espacial
+void send_to_socket_server(int sock, const char *json_message) {
+    if(send(sock, json_message, strlen(json_message), 0) == -1) {
+        perror("Error sending data to spaceship interface");
+    }
+}
+
 // Função que lê o arquivo e publica os dados no RabbitMQ
 void read_and_publish_temperature(const char *file_path) {
     FILE *file;
@@ -147,6 +183,7 @@ void read_and_publish_temperature(const char *file_path) {
     // Armazena até 255 caracteres de uma linha
     char line[256];
     amqp_connection_state_t conn = connect_rabbitmq();
+    int sockect_conn = connect_to_socket_server();
 
     // Loop infinito para ler e publicar continuamente
     while(1) {
@@ -163,7 +200,11 @@ void read_and_publish_temperature(const char *file_path) {
             sprintf(json_message, "{\"external_temperature\": %.1f}", temperature.temp);
 
             printf("Sending external temperature: %s\n", line);
+            
+            // Publica no RabbitMQ
             publish_temperature(&conn, json_message);
+            // Envia para a nave espacial via comunicação direta
+            send_to_socket_server(sockect_conn, json_message);
             sleep(3); // Publica uma temperatura nova a cada 3s
         }
 
