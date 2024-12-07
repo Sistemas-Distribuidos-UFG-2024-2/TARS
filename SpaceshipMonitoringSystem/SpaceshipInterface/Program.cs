@@ -13,6 +13,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSerilog();
 builder.Services.AddRabbitMqService(builder.Configuration);
+builder.Services.AddSingleton<SensorServer>(provider =>
+{
+    var logger = provider.GetRequiredService<ILogger<SensorServer>>();
+    return new SensorServer(5101, logger);
+});
 
 var app = builder.Build();
 
@@ -32,7 +37,7 @@ app.MapPost("api/houston", async (HoustonMessage message, HoustonProducer produc
 
 app.MapGet("/", () => Results.Ok("Spaceship interface up and running..."));
 
-var ExTempServer = new ExternalTemperatureServer(5101);
-_ = ExTempServer.StartAsync();
+var sensorServer = app.Services.GetRequiredService<SensorServer>();
+_ = sensorServer.StartAsync();
 
 app.Run();

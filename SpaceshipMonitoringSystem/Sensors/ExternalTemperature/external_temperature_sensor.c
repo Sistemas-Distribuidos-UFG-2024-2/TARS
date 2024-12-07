@@ -96,29 +96,55 @@ amqp_connection_state_t connect_rabbitmq() {
     }
 }
 
-// Função para conectar ao servidor de socket da nave espacial
-int connect_to_socket_server() {
+// Função para criar o socket de comunicação com a nave espacial
+int create_socket() {
+    int attempt = 0;
+    const int max_attempts = 5;
+    int sock;
 
-    // TODO: Fazer com que ele tente criar um socket a todo custo
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
-        printf("Error creating socket\n");
-        exit(1);
+    // Loop para garantir que o socket seja criado
+    while(1) {
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock >= 0) {
+            printf("Socket created successfully\n");
+            // Retorna o socket criado
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error creating socket. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
     }
+}
 
-    struct sockaddr_in server_addr;
+// Função para conectar o socket ao servidor da nave espacial
+int connect_to_spaceship_socket_server() {
+    struct sockaddr_in server_addr; // Estrutura para armazenar os dados do servidor
+    int attempt = 0;
+    const int max_attempts = 5;
+
+    // Criação do socket
+    int sock = create_socket();
+
+    // Preenche dados do servidor
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SOCKET_SERVER_PORT);
     server_addr.sin_addr.s_addr = inet_addr(SOCKET_SERVER_IP);
 
-    if(connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        perror("Error connecting to socket server");
-        close(sock);
-        exit(1);
+    // Loop para tentativa de conexão com o servidor
+    while(1) {
+        if(connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
+            printf("Connected to spaceship interface via socket\n");
+            // Retorna o socket conectado com o servidor
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error connecting to spaceship socket server. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
     }
-
-    printf("Connected to spaceship interface via socket\n");
-    return sock;
 }
 
 // Função para enviar a mensagem com a temperatura para a fila do RabbitMQ
@@ -153,10 +179,22 @@ void publish_temperature(amqp_connection_state_t *conn, const char *json_message
     }
 }
 
-// Envia a mensagem JSON para a nave espacial
-void send_to_socket_server(int sock, const char *json_message) {
-    if(send(sock, json_message, strlen(json_message), 0) == -1) {
-        perror("Error sending data to spaceship interface");
+// Envia a mensagem JSON ao servidor da nave espacial através do socket
+void send_to_spaceship_socket_server(int sock, const char *json_message) {
+    int attempt = 0;
+    const int max_attempts = 5;
+
+    // Loop para tentar enviar a mensagem
+    while(1) {
+        // Se der certo o envio, sai do loop e não imprime nada
+        if(send(sock, json_message, strlen(json_message), 0) != -1) {
+            break;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error sending data to spaceship. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
     }
 }
 
@@ -183,7 +221,7 @@ void read_and_publish_temperature(const char *file_path) {
     // Armazena até 255 caracteres de uma linha
     char line[256];
     amqp_connection_state_t conn = connect_rabbitmq();
-    int sockect_conn = connect_to_socket_server();
+    int sockect_conn = connect_to_spaceship_socket_server();
 
     // Loop infinito para ler e publicar continuamente
     while(1) {
@@ -204,8 +242,10 @@ void read_and_publish_temperature(const char *file_path) {
             // Publica no RabbitMQ
             publish_temperature(&conn, json_message);
             // Envia para a nave espacial via comunicação direta
-            send_to_socket_server(sockect_conn, json_message);
-            sleep(3); // Publica uma temperatura nova a cada 3s
+            send_to_spaceship_socket_server(sockect_conn, json_message);
+            
+            // Pausa por 3s antes de publicar uma nova temperatura
+            sleep(3); 
         }
 
         // Se chegar ao fim do arquivo, volta ao início dele
