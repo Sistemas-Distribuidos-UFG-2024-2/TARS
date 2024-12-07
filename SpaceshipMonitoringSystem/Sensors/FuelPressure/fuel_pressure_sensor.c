@@ -15,9 +15,8 @@
 #define SOCKET_SERVER_PORT 5101
 
 typedef struct {
-    float temp;
+    float fpressure;
 } Data;
-
 
 /**
  * Faixa segura de pressão do combustível (sem uso dos motores): 50 a 150 quilopascal:
@@ -25,7 +24,6 @@ typedef struct {
  * 150 kPa: Valor máximo, considerando uma margem de segurança e a capacidade dos tanques em suportar a pressão.
  */
  
-// Função que obtém o hostname a partir de variável de ambiente
 const char* get_hostname() {
     const char* hostname = getenv("RABBITMQ_HOSTNAME");
     if (hostname == NULL) {
@@ -36,13 +34,11 @@ const char* get_hostname() {
     return hostname;
 }
 
-// Função para estabelecer uma conexão com o RabbitMQ através de um socket TCP
 amqp_connection_state_t connect_rabbitmq() {
     amqp_connection_state_t conn;
-    int attempt = 0; // Se a conexão for perdida, o sensor vai tentar se reconectar automaticamente
-    const int max_attempts = 5; // Número max de tentativas antes de esperar 10s (fixo)
+    int attempt = 0;
+    const int max_attempts = 5;
 
-    // Loop para estabelecer conexão com sucesso
     while(1) {
         conn = amqp_new_connection();
         amqp_socket_t *socket = amqp_tcp_socket_new(conn);
@@ -52,64 +48,53 @@ amqp_connection_state_t connect_rabbitmq() {
             amqp_destroy_connection(conn);
         } else {
 
-            // Socket criado, tenta abrir o socket TCP
-            if(amqp_socket_open(socket, get_hostname(), PORT) == 0) { // Conexão feita com sucesso
+            if(amqp_socket_open(socket, get_hostname(), PORT) == 0) { 
 
-                // Obter as credenciais do RabbitMQ das variáveis de ambiente do Docker
                 const char *username = getenv("RABBITMQ_USER");
                 const char *password = getenv("RABBITMQ_PASSWORD");
 
                 if (!username || !password) {
                     printf("Error: RabbitMQ credentials not set in environment variables\n");
                     amqp_destroy_connection(conn);
-                    exit(1); // Sem credenciais não tem como continuar
+                    exit(1);
                 }
 
-                // Configuração de login no RabbitMQ usando as variáveis de ambiente
                 amqp_rpc_reply_t login_reply = amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username, password);
                 if(login_reply.reply_type == AMQP_RESPONSE_NORMAL) {
 
-                    // Se deu tudo certo no login, tenta abrir o canal 1 para comunicação para publicar mensagens
                     amqp_channel_open(conn, 1);
 
-                    // Verifica se o canal foi aberto com sucesso
                     if(amqp_get_rpc_reply(conn).reply_type == AMQP_RESPONSE_NORMAL) {
                         printf("Successfully connected to RabbitMQ server\n");
                         return conn;
                     }
                 }
 
-                // Se o login ou canal falharem
                 printf("Error opening channel\n");
                 amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
             } else {
                 printf("Error connecting to RabbitMQ server\n");
             }
 
-            // Falha na conexão, detrói e tenta novamente
             amqp_destroy_connection(conn);
         }
 
-        // Aguardar antes de tentar novamente
         attempt++;
-        int wait_time = (attempt < max_attempts) ? attempt * 2 : 10; // Ajuste do tempo de espera para não sobrecarregar o servidor
+        int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
         printf("Retrying connection in %d seconds...\n", wait_time);
         sleep(wait_time);
     }
 }
 
-// Função para criar o socket de comunicação com a nave espacial
 int create_socket() {
     int attempt = 0;
     const int max_attempts = 5;
     int sock;
 
-    // Loop para garantir que o socket seja criado
     while(1) {
         sock = socket(AF_INET, SOCK_STREAM, 0);
         if (sock >= 0) {
             printf("Socket created successfully\n");
-            // Retorna o socket criado
             return sock;
         } else {
             attempt++;
@@ -120,25 +105,20 @@ int create_socket() {
     }
 }
 
-// Função para conectar o socket ao servidor da nave espacial
 int connect_to_spaceship_socket_server() {
-    struct sockaddr_in server_addr; // Estrutura para armazenar os dados do servidor
+    struct sockaddr_in server_addr;
     int attempt = 0;
     const int max_attempts = 5;
 
-    // Criação do socket
     int sock = create_socket();
 
-    // Preenche dados do servidor
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SOCKET_SERVER_PORT);
     server_addr.sin_addr.s_addr = inet_addr(SOCKET_SERVER_IP);
 
-    // Loop para tentativa de conexão com o servidor
     while(1) {
         if(connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
             printf("Connected to spaceship interface via socket\n");
-            // Retorna o socket conectado com o servidor
             return sock;
         } else {
             attempt++;
@@ -149,46 +129,36 @@ int connect_to_spaceship_socket_server() {
     }
 }
 
-// Função para enviar a mensagem com a pressão do combustível para a fila do RabbitMQ
-void publish_fuel_pressure_values(amqp_connection_state_t *conn, const char *json_message) {
+void publish_fuel_pressure(amqp_connection_state_t *conn, const char *json_message) {
     
-    // Verifica se a conexão ainda está ativa antes de cada pub, se não estiver tenta reconectar
-    // Se a conexão for interrompida, ele voltará de onde parou
     if(*conn == NULL) {
         *conn = connect_rabbitmq();
     }
 
-    // Declara a fila antes de publicar para garantir que ela existe
     amqp_queue_declare(*conn, 1, amqp_cstring_bytes(QUEUE_NAME), 0, 1, 0, 0, amqp_empty_table);
     amqp_bytes_t queue = amqp_cstring_bytes(QUEUE_NAME);
 
-    // Propriedades da mensagem
     amqp_basic_properties_t props;
     props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG;
     props.content_type = amqp_cstring_bytes("application/json");
 
-    // Tenta publicar a mensagem na fila
     int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(json_message));
 
-    // Verifica se a publicação foi bem-sucedida, caso contrário fecha e destrói a conexão, tenta reconectar e publicar novamente
     if(result != 0 || amqp_get_rpc_reply(*conn).reply_type != AMQP_RESPONSE_NORMAL) {
         printf("Error publishing message, attempting to reconnect...\n");
         amqp_channel_close(*conn, 1, AMQP_REPLY_SUCCESS);
         amqp_connection_close(*conn, AMQP_REPLY_SUCCESS);
         amqp_destroy_connection(*conn);
-        *conn = connect_rabbitmq(); // Tenta conectar de novo
-        publish_fuel_pressure_values(conn, json_message);
+        *conn = connect_rabbitmq(); 
+        publish_fuel_pressure(conn, json_message);
     }
 }
 
-// Envia a mensagem JSON ao servidor da nave espacial através do socket
 void send_to_spaceship_socket_server(int sock, const char *json_message) {
     int attempt = 0;
     const int max_attempts = 5;
 
-    // Loop para tentar enviar a mensagem
     while(1) {
-        // Se der certo o envio, sai do loop e não imprime nada
         if(send(sock, json_message, strlen(json_message), 0) != -1) {
             break;
         } else {
@@ -200,13 +170,11 @@ void send_to_spaceship_socket_server(int sock, const char *json_message) {
     }
 }
 
-// Função que lê o arquivo e publica os dados no RabbitMQ
-void read_and_publish_fuel_pressure_values(const char *file_path) {
+void read_and_publish_fuel_pressure(const char *file_path) {
     FILE *file;
     int attempt = 0;
     const int max_attempts = 5;
 
-    // Loop para tentar abrir o arquivo até que seja bem-sucedido
     while(1) {
         file = fopen(file_path, "r");
         if(file) {
@@ -220,26 +188,20 @@ void read_and_publish_fuel_pressure_values(const char *file_path) {
         }
     }
 
-    // Armazena até 255 caracteres de uma linha
     char line[256];
     amqp_connection_state_t conn = connect_rabbitmq();
     int sockect_conn = connect_to_spaceship_socket_server();
 
-    // Loop infinito para ler e publicar continuamente
     while(1) {
-        // Lê uma linha do arquivo por vez, armazena em 'line' e publica como mensagem
         while(fgets(line, sizeof(line), file)) {
-            // Remove caractere de nova linha da linha lida e coloca o '\0' no lugar
             line[strcspn(line, "\n")] = 0;
 
-            // Preenche struct com valor lido
             Data fuel_pressure = { atof(line) };
 
-            // Converte valor da struct em um JSON
             char json_message[128];
-            sprintf(json_message, "{\"fuel_pressure": %.1f}", fuel_pressure.temp);
+            sprintf(json_message, "{\"fuel_pressure\": %.2f}", fuel_pressure.fpressure);
 
-            printf("Sending external fuel_pressure: %s\n", line);
+            printf("Sending external fuel pressure value: %s\n", line);
             
             // Publica no RabbitMQ
             publish_fuel_pressure(&conn, json_message);
@@ -263,6 +225,6 @@ void read_and_publish_fuel_pressure_values(const char *file_path) {
 
 int main() {
     setbuf(stdout, NULL); // Imprimir imediatamente
-    read_and_publish_fuel_pressure_values(FILE_PATH);
+    read_and_publish_fuel_pressure(FILE_PATH);
     return 0;
 }
