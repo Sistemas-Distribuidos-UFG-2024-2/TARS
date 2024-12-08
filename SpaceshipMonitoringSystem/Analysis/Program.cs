@@ -10,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSerilog();
+builder.Services.AddMongoDb();
 builder.Services.AddServices();
 builder.Services.AddRabbitMqService(builder.Configuration);
 

@@ -1,4 +1,5 @@
 using Analysis.Consumers;
+using Analysis.Database;
 using Analysis.Producers;
 using Analysis.Services;
 using Analysis.DTO;
@@ -6,8 +7,15 @@ using MassTransit;
 
 namespace Analysis.Extensions;
 
-public static class AppExtensions
+public static class ServiceCollectionExtensions
 {
+    public static void AddMongoDb(this IServiceCollection services)
+    {
+        services.AddSingleton<IMongoDbConfig, MongoDbConfig>();
+        services.AddSingleton<IMongoDbConnection, MongoDbConnection>();
+        services.AddSingleton<IMongoDbContext, MongoDbContext>();
+    }
+    
     public static void AddServices(this IServiceCollection services)
     {
         services.AddScoped<IAnalysisService, AnalysisService>();
