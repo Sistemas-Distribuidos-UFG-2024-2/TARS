@@ -8,7 +8,7 @@ public class Repository<T>: IRepository<T> where T : BaseEntity
 
     public Repository(IMongoDbConnection connection)
     {
-        Collection = connection.Collection<T>(nameof(T));
+        Collection = connection.Collection<T>(typeof(T).Name.ToLower());
     }
     
     public async Task InsertOne(T entity, InsertOneOptions? options = null, CancellationToken cancellationToken = default)
@@ -44,13 +44,13 @@ public class Repository<T>: IRepository<T> where T : BaseEntity
         CancellationToken cancellationToken = default)
     {
         var result =  await Collection.UpdateOneAsync(filter, update, options, cancellationToken);
-        return result.IsAcknowledged;
+        return result.ModifiedCount > 0;
     }
 
     public async Task<bool> DeleteOne(FilterDefinition<T> filter, DeleteOptions? options = null, CancellationToken cancellationToken = default)
     {
         var result = await Collection.DeleteOneAsync(filter, options, cancellationToken);
-        return result.IsAcknowledged;
+        return result.DeletedCount > 0;
     }
 
 }
