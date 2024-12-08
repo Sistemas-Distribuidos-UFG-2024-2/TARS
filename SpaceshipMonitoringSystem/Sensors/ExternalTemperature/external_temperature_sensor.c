@@ -267,7 +267,7 @@ void read_and_publish_temperature(const char *file_path) {
             
             // Publica no RabbitMQ
             publish_temperature(&conn, json_message);
-            // Envia para a nave espacial via comunicação direta
+            // Tenta enviar para a nave espacial via comunicação direta
             if(send_to_spaceship_socket_server(socket_conn, json_message) == -1) {
                 close(socket_conn);
                 socket_conn = connect_to_spaceship_socket_server();

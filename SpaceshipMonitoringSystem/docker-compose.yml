@@ -84,11 +84,11 @@ services:
   #     - 5166:8080
   #   <<: *common
 
-  # acceleration_sensor:
-  #   build:
-  #     context: ./Sensors/Acceleration
-  #     dockerfile: Dockerfile
-  #   <<: *common-sensors
+  acceleration_sensor:
+    build:
+      context: ./Sensors/Acceleration
+      dockerfile: Dockerfile
+    <<: *common-sensors
 
   externaltemperature_sensor:
     build:
