@@ -214,15 +214,14 @@ void publish_temperature(amqp_connection_state_t *conn, const char *json_message
     }
 }
 
-// Envia a mensagem JSON ao servidor da nave espacial através do socket
+// Tenta enviar a mensagem JSON ao servidor da nave espacial através do socket
 int send_to_spaceship_socket_server(int sock, const char *json_message) {
-    
-    if (send(sock, json_message, strlen(json_message), 0) == -1) {
-        // Falha no envio: Fecha o socket e retorna erro
-        close(sock);
+    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
         return -1; // Indica que a conexão precisa ser reestabelecida
     }
-    return 0; // Envio bem-sucedido
+    else {
+        return 0; // Envio bem-sucedido
+    }
 }
 
 // Função que lê o arquivo e publica os dados no RabbitMQ
@@ -270,6 +269,7 @@ void read_and_publish_temperature(const char *file_path) {
             publish_temperature(&conn, json_message);
             // Envia para a nave espacial via comunicação direta
             if(send_to_spaceship_socket_server(socket_conn, json_message) == -1) {
+                close(socket_conn);
                 socket_conn = connect_to_spaceship_socket_server();
             }
             
