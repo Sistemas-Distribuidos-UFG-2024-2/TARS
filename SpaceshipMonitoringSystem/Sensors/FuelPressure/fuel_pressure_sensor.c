@@ -190,7 +190,7 @@ void read_and_publish_fuel_pressure(const char *file_path) {
 
     char line[256];
     amqp_connection_state_t conn = connect_rabbitmq();
-    int sockect_conn = connect_to_spaceship_socket_server();
+    int socket_conn = connect_to_spaceship_socket_server();
 
     while(1) {
         while(fgets(line, sizeof(line), file)) {
@@ -206,7 +206,7 @@ void read_and_publish_fuel_pressure(const char *file_path) {
             // Publica no RabbitMQ
             publish_fuel_pressure(&conn, json_message);
             // Envia para a nave espacial via comunicação direta
-            send_to_spaceship_socket_server(sockect_conn, json_message);
+            send_to_spaceship_socket_server(socket_conn, json_message);
             
             // Pausa por 3s antes de publicar uma nova pressão de combustível
             sleep(3); 
