@@ -4,20 +4,25 @@
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #define PORT 5672
+// Nome da fila em que o sensor publicará as mensagens
 #define QUEUE_NAME "internal_pressure_queue"
 #define FILE_PATH "internal_pressure_values.txt"
+#define SOCKET_SERVER_IP "127.0.0.1"
+#define SOCKET_SERVER_PORT 5101
 
 typedef struct {
-    float ipressure;
+    float fpressure_internal;
 } Data;
 
-/* 
- * Sensor de pressão interna da nave SpaceCraft
- * Intervalo normal de pressão interna: 100 a 103 kPa
-*/
-
+/**
+ * Intervalo normal de acceleração de uma espaçonave que está orbitando a Terra em velocidade constante:
+ * -1 a 1 micrômetros por segundo ao quadrado
+ */
+ 
 const char* get_hostname() {
     const char* hostname = getenv("RABBITMQ_HOSTNAME");
     if (hostname == NULL) {
@@ -41,7 +46,8 @@ amqp_connection_state_t connect_rabbitmq() {
             printf("Error creating TCP socket. Retrying...\n");
             amqp_destroy_connection(conn);
         } else {
-            if(amqp_socket_open(socket, get_hostname(), PORT) == 0) {
+
+            if(amqp_socket_open(socket, get_hostname(), PORT) == 0) { 
 
                 const char *username = getenv("RABBITMQ_USER");
                 const char *password = getenv("RABBITMQ_PASSWORD");
@@ -54,12 +60,15 @@ amqp_connection_state_t connect_rabbitmq() {
 
                 amqp_rpc_reply_t login_reply = amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username, password);
                 if(login_reply.reply_type == AMQP_RESPONSE_NORMAL) {
+
                     amqp_channel_open(conn, 1);
+
                     if(amqp_get_rpc_reply(conn).reply_type == AMQP_RESPONSE_NORMAL) {
                         printf("Successfully connected to RabbitMQ server\n");
                         return conn;
                     }
                 }
+
                 printf("Error opening channel\n");
                 amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
             } else {
@@ -76,7 +85,50 @@ amqp_connection_state_t connect_rabbitmq() {
     }
 }
 
-void publish_internal_pressure_value(amqp_connection_state_t *conn, const char *json_message) {
+int create_socket() {
+    int attempt = 0;
+    const int max_attempts = 5;
+    int sock;
+
+    while(1) {
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock >= 0) {
+            printf("Socket created successfully\n");
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error creating socket. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
+    }
+}
+
+int connect_to_spaceship_socket_server() {
+    struct sockaddr_in server_addr;
+    int attempt = 0;
+    const int max_attempts = 5;
+
+    int sock = create_socket();
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(SOCKET_SERVER_PORT);
+    server_addr.sin_addr.s_addr = inet_addr(SOCKET_SERVER_IP);
+
+    while(1) {
+        if(connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
+            printf("Connected to spaceship interface via socket\n");
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error connecting to spaceship socket server. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
+    }
+}
+
+void publish_internal_pressure(amqp_connection_state_t *conn, const char *json_message) {
     
     if(*conn == NULL) {
         *conn = connect_rabbitmq();
@@ -96,12 +148,28 @@ void publish_internal_pressure_value(amqp_connection_state_t *conn, const char *
         amqp_channel_close(*conn, 1, AMQP_REPLY_SUCCESS);
         amqp_connection_close(*conn, AMQP_REPLY_SUCCESS);
         amqp_destroy_connection(*conn);
-        *conn = connect_rabbitmq();
-        publish_internal_pressure_value(conn, json_message);
+        *conn = connect_rabbitmq(); 
+        publish_internal_pressure(conn, json_message);
     }
 }
 
-void read_and_publish_internal_pressure_value(const char *file_path) {
+void send_to_spaceship_socket_server(int sock, const char *json_message) {
+    int attempt = 0;
+    const int max_attempts = 5;
+
+    while(1) {
+        if(send(sock, json_message, strlen(json_message), 0) != -1) {
+            break;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error sending data to spaceship. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
+    }
+}
+
+void read_and_publish_internal_pressure(const char *file_path) {
     FILE *file;
     int attempt = 0;
     const int max_attempts = 5;
@@ -121,6 +189,7 @@ void read_and_publish_internal_pressure_value(const char *file_path) {
 
     char line[256];
     amqp_connection_state_t conn = connect_rabbitmq();
+    int socket_conn = connect_to_spaceship_socket_server();
 
     while(1) {
         while(fgets(line, sizeof(line), file)) {
@@ -129,16 +198,24 @@ void read_and_publish_internal_pressure_value(const char *file_path) {
             Data internal_pressure = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"internal_pressure\": %.1f}", internal_pressure.ipressure);
+            sprintf(json_message, "{\"internal_pressure\": %.1f}", internal_pressure.fpressure_internal);
 
-            printf("Sending internal pressure value: %s\n", line);
-            publish_internal_pressure_value(&conn, json_message);
-            sleep(3);
+            printf("Sending external fuel pressure_internal value: %s\n", line);
+            
+            // Publica no RabbitMQ
+            publish_internal_pressure(&conn, json_message);
+            // Envia para a nave espacial via comunicação direta
+            send_to_spaceship_socket_server(socket_conn, json_message);
+            
+            // Pausa por 3s antes de publicar uma nova pressão internação
+            sleep(3); 
         }
 
+        // Se chegar ao fim do arquivo, volta ao início dele
         rewind(file);
     }
 
+    // É só para prevenir caso um imprevisto acontença, como o ser loop interrompido manualmente
     fclose(file);
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
@@ -146,7 +223,7 @@ void read_and_publish_internal_pressure_value(const char *file_path) {
 }
 
 int main() {
-    setbuf(stdout, NULL);
-    read_and_publish_internal_pressure_value(FILE_PATH);
+    setbuf(stdout, NULL); // Imprimir imediatamente
+    read_and_publish_internal_pressure(FILE_PATH);
     return 0;
 }
