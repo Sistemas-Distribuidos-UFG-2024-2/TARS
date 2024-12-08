@@ -1,13 +1,27 @@
 using NotificationSystem.Consumers;
 using NotificationSystem.Producers;
-using NotificationSystem.DTO;
 using MassTransit;
-using MassTransit.RabbitMqTransport;
+using NotificationSystem.Database;
+using NotificationSystem.Repositories;
+using NotificationSystem.Services;
 
 namespace NotificationSystem.Extensions;
 
-public static class AppExtensions
+public static class ServiceCollectionExtensions
 {
+    public static void AddMongoDb(this IServiceCollection services)
+    {
+        services.AddSingleton<IMongoDbConfig, MongoDbConfig>();
+        services.AddSingleton<IMongoDbConnection, MongoDbConnection>();
+        services.AddSingleton<IMongoDbContext, MongoDbContext>();
+    }
+
+    public static void AddServices(this IServiceCollection services)
+    {
+        services.AddScoped<IPersonsRepository, PersonsRepository>();
+        services.AddScoped<IPersonsService, PersonsService>();
+    }
+    
     public static void AddRabbitMqService(this IServiceCollection services, IConfiguration configuration)
     {
         var section = configuration.GetSection("RabbitMQ");
@@ -18,7 +32,6 @@ public static class AppExtensions
 
         services.AddMassTransit(configurator =>
         {
-            configurator.AddConsumer<BasicConsumer>();
             configurator.AddConsumer<AnalysisConsumer>();
             
             configurator.UsingRabbitMq((context, factoryConfigurator) =>
@@ -42,11 +55,6 @@ public static class AppExtensions
                     });
                 });
 
-                factoryConfigurator.ReceiveEndpoint("basic-queue", endpoint =>
-                {
-                    endpoint.ConfigureConsumer<BasicConsumer>(context);
-                });
-                
                 factoryConfigurator.ConfigureEndpoints(context);
             });
         });
