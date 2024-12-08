@@ -1,4 +1,5 @@
 using Houston.Consumers;
+using Houston.Database;
 using Houston.Producers;
 using Houston.DTO;
 using MassTransit;
@@ -6,8 +7,15 @@ using MassTransit.RabbitMqTransport;
 
 namespace Houston.Extensions;
 
-public static class AppExtensions
+public static class ServiceCollectionExtensions
 {
+    public static void AddMongoDb(this IServiceCollection services)
+    {
+        services.AddSingleton<IMongoDbConfig, MongoDbConfig>();
+        services.AddSingleton<IMongoDbConnection, MongoDbConnection>();
+        services.AddSingleton<IMongoDbContext, MongoDbContext>();
+    }
+    
     public static void AddRabbitMqService(this IServiceCollection services, IConfiguration configuration)
     {
         var section = configuration.GetSection("RabbitMQ");
