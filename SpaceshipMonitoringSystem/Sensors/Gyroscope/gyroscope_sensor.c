@@ -193,7 +193,7 @@ void read_and_pub_gyroscope(const char *file_path) {
     const unsigned MAX_LENGTH = 64;
     char buffer[MAX_LENGTH];
     amqp_connection_state_t conn = connect_rabbitmq();
-    int sockect_conn = connect_to_spaceship_socket_server();
+    int socket_conn = connect_to_spaceship_socket_server();
 
     while(1) {
         // Função que lê a linha e aloca na string (vetor) "buffer"
@@ -213,7 +213,7 @@ void read_and_pub_gyroscope(const char *file_path) {
 
                 // Envia a string JSON
                 publish_gyroscope(&conn, json_message);
-                send_to_spaceship_socket_server(sockect_conn, json_message);
+                send_to_spaceship_socket_server(socket_conn, json_message);
 
             } else {
                 printf("Error parsing line: %s\n", buffer);

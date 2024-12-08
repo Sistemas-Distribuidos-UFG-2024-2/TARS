@@ -8,7 +8,6 @@
 #include <arpa/inet.h>
 
 #define PORT 5672
-// Nome da fila em que o sensor publicará as mensagens
 #define QUEUE_NAME "fuel_pressure_queue"
 #define FILE_PATH "fuel_pressure_values.txt"
 #define SOCKET_SERVER_IP "127.0.0.1"
@@ -201,22 +200,17 @@ void read_and_publish_fuel_pressure(const char *file_path) {
             char json_message[128];
             sprintf(json_message, "{\"fuel_pressure\": %.2f}", fuel_pressure.fpressure);
 
-            printf("Sending external fuel pressure value: %s\n", line);
+            printf("Sending fuel pressure value: %s\n", line);
             
-            // Publica no RabbitMQ
             publish_fuel_pressure(&conn, json_message);
-            // Envia para a nave espacial via comunicação direta
             send_to_spaceship_socket_server(socket_conn, json_message);
             
-            // Pausa por 3s antes de publicar uma nova pressão de combustível
             sleep(3); 
         }
 
-        // Se chegar ao fim do arquivo, volta ao início dele
         rewind(file);
     }
 
-    // É só para prevenir caso um imprevisto acontença, como o ser loop interrompido manualmente
     fclose(file);
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
@@ -224,7 +218,7 @@ void read_and_publish_fuel_pressure(const char *file_path) {
 }
 
 int main() {
-    setbuf(stdout, NULL); // Imprimir imediatamente
+    setbuf(stdout, NULL); 
     read_and_publish_fuel_pressure(FILE_PATH);
     return 0;
 }

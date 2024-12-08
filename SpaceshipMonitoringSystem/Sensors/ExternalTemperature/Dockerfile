@@ -1,7 +1,7 @@
 FROM frolvlad/alpine-gcc:latest
 
 # Instala as dependências necessárias para baixar e compilar a biblioteca librabbitmq
-RUN apk add --no-cache cmake make git openssl-dev
+RUN apk add --no-cache cmake make git openssl-dev musl-dev
 
 WORKDIR /app
 

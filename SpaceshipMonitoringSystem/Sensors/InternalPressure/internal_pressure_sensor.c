@@ -8,20 +8,19 @@
 #include <arpa/inet.h>
 
 #define PORT 5672
-// Nome da fila em que o sensor publicará as mensagens
 #define QUEUE_NAME "internal_pressure_queue"
 #define FILE_PATH "internal_pressure_values.txt"
 #define SOCKET_SERVER_IP "127.0.0.1"
 #define SOCKET_SERVER_PORT 5101
 
 typedef struct {
-    float fpressure_internal;
+    float ipressure;
 } Data;
 
-/**
- * Intervalo normal de acceleração de uma espaçonave que está orbitando a Terra em velocidade constante:
- * -1 a 1 micrômetros por segundo ao quadrado
- */
+/* 
+ * Sensor de pressão interna da nave SpaceCraft
+ * Intervalo normal de pressão interna: 100 a 103 kPa
+*/
  
 const char* get_hostname() {
     const char* hostname = getenv("RABBITMQ_HOSTNAME");
@@ -198,24 +197,18 @@ void read_and_publish_internal_pressure(const char *file_path) {
             Data internal_pressure = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"internal_pressure\": %.1f}", internal_pressure.fpressure_internal);
+            sprintf(json_message, "{\"internal_pressure\": %.1f}", internal_pressure.ipressure);
 
-            printf("Sending external fuel pressure_internal value: %s\n", line);
+            printf("Sending internal presssure value: %s\n", line);
             
-            // Publica no RabbitMQ
             publish_internal_pressure(&conn, json_message);
-            // Envia para a nave espacial via comunicação direta
             send_to_spaceship_socket_server(socket_conn, json_message);
-            
-            // Pausa por 3s antes de publicar uma nova pressão internação
             sleep(3); 
         }
 
-        // Se chegar ao fim do arquivo, volta ao início dele
         rewind(file);
     }
 
-    // É só para prevenir caso um imprevisto acontença, como o ser loop interrompido manualmente
     fclose(file);
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);

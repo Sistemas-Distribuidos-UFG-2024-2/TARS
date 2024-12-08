@@ -8,14 +8,13 @@
 #include <arpa/inet.h>
 
 #define PORT 5672
-// Nome da fila em que o sensor publicará as mensagens
 #define QUEUE_NAME "acceleration_queue"
 #define FILE_PATH "acceleration_values.txt"
 #define SOCKET_SERVER_IP "127.0.0.1"
 #define SOCKET_SERVER_PORT 5101
 
 typedef struct {
-    float faccelerate;
+    float acceleration;
 } Data;
 
 /**
@@ -198,24 +197,18 @@ void read_and_publish_acceleration(const char *file_path) {
             Data acceleration = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"acceleration\": %.3f}", acceleration.faccelerate);
+            sprintf(json_message, "{\"acceleration\": %.3f}", acceleration.acceleration);
 
-            printf("Sending external fuel accelerate value: %s\n", line);
+            printf("Sending acceleration value: %s\n", line);
             
-            // Publica no RabbitMQ
             publish_acceleration(&conn, json_message);
-            // Envia para a nave espacial via comunicação direta
             send_to_spaceship_socket_server(socket_conn, json_message);
-            
-            // Pausa por 3s antes de publicar uma nova aceleração
             sleep(3); 
         }
 
-        // Se chegar ao fim do arquivo, volta ao início dele
         rewind(file);
     }
 
-    // É só para prevenir caso um imprevisto acontença, como o ser loop interrompido manualmente
     fclose(file);
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
@@ -223,7 +216,7 @@ void read_and_publish_acceleration(const char *file_path) {
 }
 
 int main() {
-    setbuf(stdout, NULL); // Imprimir imediatamente
+    setbuf(stdout, NULL); 
     read_and_publish_acceleration(FILE_PATH);
     return 0;
 }

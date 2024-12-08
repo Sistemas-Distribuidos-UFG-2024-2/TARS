@@ -125,7 +125,7 @@ int connect_to_spaceship_socket_server() {
     }
 }
 
-void publish_radiation_value(amqp_connection_state_t *conn, const char *json_message) {
+void publish_radiation(amqp_connection_state_t *conn, const char *json_message) {
     
     if(*conn == NULL) {
         *conn = connect_rabbitmq();
@@ -146,7 +146,7 @@ void publish_radiation_value(amqp_connection_state_t *conn, const char *json_mes
         amqp_connection_close(*conn, AMQP_REPLY_SUCCESS);
         amqp_destroy_connection(*conn);
         *conn = connect_rabbitmq();
-        publish_radiation_value(conn, json_message);
+        publish_radiation(conn, json_message);
     }
 }
 
@@ -166,7 +166,7 @@ void send_to_spaceship_socket_server(int sock, const char *json_message) {
     }
 }
 
-void read_and_publish_radiation_value(const char *file_path) {
+void read_and_publish_radiation(const char *file_path) {
     FILE *file;
     int attempt = 0;
     const int max_attempts = 5;
@@ -198,7 +198,7 @@ void read_and_publish_radiation_value(const char *file_path) {
             sprintf(json_message, "{\"radiation\": %.1f}", radiation.rad);
 
             printf("Sending radiation value: %s\n", line);
-            publish_radiation_value(&conn, json_message);
+            publish_radiation(&conn, json_message);
             send_to_spaceship_socket_server(socket_conn, json_message);
             sleep(3);
         }
@@ -214,6 +214,6 @@ void read_and_publish_radiation_value(const char *file_path) {
 
 int main() {
     setbuf(stdout, NULL);
-    read_and_publish_radiation_value(FILE_PATH);
+    read_and_publish_radiation(FILE_PATH);
     return 0;
 }

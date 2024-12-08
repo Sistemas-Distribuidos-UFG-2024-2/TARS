@@ -195,7 +195,7 @@ void read_and_publish_temperature(const char *file_path) {
             char json_message[128];
             sprintf(json_message, "{\"internal_temperature\": %.1f}", temperature.temp);
             
-            printf("Sending temperature: %s\n", line);
+            printf("Sending internal temperature value: %s\n", line);
             publish_temperature(&conn, json_message);
             send_to_spaceship_socket_server(socket_conn, json_message);
             sleep(3);

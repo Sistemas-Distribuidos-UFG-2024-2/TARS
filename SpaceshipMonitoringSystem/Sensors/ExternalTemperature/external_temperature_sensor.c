@@ -11,8 +11,6 @@
 // Nome da fila em que o sensor publicará as mensagens
 #define QUEUE_NAME "external_temperature_queue"
 #define FILE_PATH "external_temperatures.txt"
-#define SOCKET_SERVER_IP "127.0.0.1"
-#define SOCKET_SERVER_PORT 5101
 
 typedef struct {
     float temp;
@@ -32,6 +30,28 @@ const char* get_hostname() {
     }
 
     return hostname;
+}
+
+// Função para obter o IP do servidor de sockets
+const char* get_socket_server_ip() {
+    const char* ip = getenv("SOCKET_SERVER_IP");
+    if (ip == NULL) {
+        printf("Error: SOCKET_SERVER_IP environment variable not set\n");
+        exit(1);
+    }
+
+    return ip;
+}
+
+// Função para obter a porta do servidor de sockets
+int get_socket_server_port() {
+    const char* port_str = getenv("SOCKET_SERVER_PORT");
+    if (port_str == NULL) {
+        printf("Error: SOCKET_SERVER_PORT environment variable not set\n");
+        exit(1);
+    }
+    
+    return atoi(port_str);
 }
 
 // Função para estabelecer uma conexão com o RabbitMQ através de um socket TCP
@@ -124,13 +144,17 @@ int connect_to_spaceship_socket_server() {
     int attempt = 0;
     const int max_attempts = 5;
 
+    // Obtém IP e porta do servidor via variáveis de ambiente
+    const char* socket_server_ip = get_socket_server_ip();
+    int socket_server_port = get_socket_server_port();
+
     // Criação do socket
     int sock = create_socket();
 
     // Preenche dados do servidor
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(SOCKET_SERVER_PORT);
-    server_addr.sin_addr.s_addr = inet_addr(SOCKET_SERVER_IP);
+    server_addr.sin_port = htons(socket_server_port);
+    server_addr.sin_addr.s_addr = inet_addr(socket_server_ip);
 
     // Loop para tentativa de conexão com o servidor
     while(1) {
@@ -237,7 +261,7 @@ void read_and_publish_temperature(const char *file_path) {
             char json_message[128];
             sprintf(json_message, "{\"external_temperature\": %.1f}", temperature.temp);
 
-            printf("Sending external temperature: %s\n", line);
+            printf("Sending external temperature value: %s\n", line);
             
             // Publica no RabbitMQ
             publish_temperature(&conn, json_message);
