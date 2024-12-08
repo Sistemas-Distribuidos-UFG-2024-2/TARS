@@ -6,12 +6,11 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #define PORT 5672
 #define QUEUE_NAME "internal_temperature_queue"
 #define FILE_PATH "internal_temperatures.txt"
-#define SOCKET_SERVER_IP "127.0.0.1"
-#define SOCKET_SERVER_PORT 5101
 
 typedef struct {
     float temp;
@@ -30,6 +29,26 @@ const char* get_hostname() {
     }
 
     return hostname;
+}
+
+const char* get_socket_server_hostname() {
+    const char* hostname = getenv("SOCKET_SERVER_HOSTNAME");
+    if (hostname == NULL) {
+        printf("Error: SOCKET_SERVER_HOSTNAME environment variable not set\n");
+        exit(1);
+    }
+
+    return hostname;
+}
+
+int get_socket_server_port() {
+    const char* port_str = getenv("SOCKET_SERVER_PORT");
+    if (port_str == NULL) {
+        printf("Error: SOCKET_SERVER_PORT environment variable not set\n");
+        exit(1);
+    }
+    
+    return atoi(port_str);
 }
 
 amqp_connection_state_t connect_rabbitmq() {
@@ -100,16 +119,27 @@ int create_socket() {
 }
 
 int connect_to_spaceship_socket_server() {
-    struct sockaddr_in server_addr;
+    struct sockaddr_in server_addr; 
     int attempt = 0;
     const int max_attempts = 5;
 
+    const char* socket_server_host = get_socket_server_hostname();
+    int socket_server_port = get_socket_server_port();
+
+    struct hostent *ip = gethostbyname(socket_server_host);
+    if (ip == NULL) {
+        printf("Error: Could not resolve hostname %s\n", socket_server_host);
+        exit(1);
+    }
+
+    memset(&server_addr, 0, sizeof(server_addr));
+
+    server_addr.sin_family = AF_INET; 
+    server_addr.sin_port = htons(socket_server_port); 
+    memcpy(&server_addr.sin_addr, ip->h_addr, ip->h_length); 
+
     int sock = create_socket();
-
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(SOCKET_SERVER_PORT);
-    server_addr.sin_addr.s_addr = inet_addr(SOCKET_SERVER_IP);
-
+    
     while(1) {
         if(connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
             printf("Connected to spaceship interface via socket\n");
@@ -135,6 +165,7 @@ void publish_temperature(amqp_connection_state_t *conn, const char *json_message
     amqp_basic_properties_t props;
     props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG;
     props.content_type = amqp_cstring_bytes("application/json");
+    props.delivery_mode = 2;
 
     int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(json_message));
 
@@ -148,19 +179,13 @@ void publish_temperature(amqp_connection_state_t *conn, const char *json_message
     }
 }
 
-void send_to_spaceship_socket_server(int sock, const char *json_message) {
-    int attempt = 0;
-    const int max_attempts = 5;
 
-    while(1) {
-        if(send(sock, json_message, strlen(json_message), 0) != -1) {
-            break;
-        } else {
-            attempt++;
-            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
-            printf("Error sending data to spaceship. Retrying in %d seconds...\n", wait_time);
-            sleep(wait_time);
-        }
+int send_to_spaceship_socket_server(int sock, const char *json_message) {
+    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
+        return -1; 
+    }
+    else {
+        return 0; 
     }
 }
 
@@ -197,7 +222,10 @@ void read_and_publish_temperature(const char *file_path) {
             
             printf("Sending internal temperature value: %s\n", line);
             publish_temperature(&conn, json_message);
-            send_to_spaceship_socket_server(socket_conn, json_message);
+            if(send_to_spaceship_socket_server(socket_conn, json_message) == -1) {
+                close(socket_conn);
+                socket_conn = connect_to_spaceship_socket_server();
+            }
             sleep(3);
         }
 
@@ -208,6 +236,7 @@ void read_and_publish_temperature(const char *file_path) {
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
     amqp_destroy_connection(conn);
+    close(socket_conn);
 }
 
 int main() {

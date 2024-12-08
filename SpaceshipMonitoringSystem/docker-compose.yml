@@ -49,13 +49,13 @@ services:
     networks:
       - spaceship-monitoring-system
 
-  # houston:
-  #   build:
-  #     context: ./Houston
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - 5008:8080
-  #   <<: *common
+  houston:
+    build:
+      context: ./Houston
+      dockerfile: Dockerfile
+    ports:
+      - 5008:8080
+    <<: *common
 
   spaceshipinterface:
     build:
@@ -66,7 +66,6 @@ services:
       - 5101:5101
     <<: *common
 
-
   analysisservice:
     container_name: analysisservice
     build:
@@ -76,13 +75,13 @@ services:
       - 5202:8080
     <<: *common
 
-  # notificationsystem:
-  #   build:
-  #     context: ./NotificationSystem
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - 5166:8080
-  #   <<: *common
+  notificationsystem:
+    build:
+      context: ./NotificationSystem
+      dockerfile: Dockerfile
+    ports:
+      - 5166:8080
+    <<: *common
 
   acceleration_sensor:
     build:
@@ -96,32 +95,32 @@ services:
       dockerfile: Dockerfile
     <<: *common-sensors
 
-  # fuelpressure_sensor:
-  #   build:
-  #     context: ./Sensors/FuelPressure
-  #     dockerfile: Dockerfile
-  #   <<: *common-sensors
+  fuelpressure_sensor:
+    build:
+      context: ./Sensors/FuelPressure
+      dockerfile: Dockerfile
+    <<: *common-sensors
 
-  # gyroscope_sensor:
-  #   build:
-  #     context: ./Sensors/Gyroscope
-  #     dockerfile: Dockerfile
-  #   <<: *common-sensors
+  gyroscope_sensor:
+    build:
+      context: ./Sensors/Gyroscope
+      dockerfile: Dockerfile
+    <<: *common-sensors
 
-  # internalpressure_sensor:
-  #   build:
-  #     context: ./Sensors/InternalPressure
-  #     dockerfile: Dockerfile
-  #   <<: *common-sensors
+  internalpressure_sensor:
+    build:
+      context: ./Sensors/InternalPressure
+      dockerfile: Dockerfile
+    <<: *common-sensors
 
-  # internaltemperature_sensor:
-  #   build:
-  #     context: ./Sensors/InternalTemperature
-  #     dockerfile: Dockerfile
-  #   <<: *common-sensors
+  internaltemperature_sensor:
+    build:
+      context: ./Sensors/InternalTemperature
+      dockerfile: Dockerfile
+    <<: *common-sensors
 
-  # radiation_sensor:
-  #   build:
-  #     context: ./Sensors/Radiation
-  #     dockerfile: Dockerfile
-  #   <<: *common-sensors
+  radiation_sensor:
+    build:
+      context: ./Sensors/Radiation
+      dockerfile: Dockerfile
+    <<: *common-sensors
