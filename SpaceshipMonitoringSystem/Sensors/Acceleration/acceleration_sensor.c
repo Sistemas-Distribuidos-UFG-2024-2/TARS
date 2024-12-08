@@ -4,20 +4,25 @@
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #define PORT 5672
+// Nome da fila em que o sensor publicará as mensagens
 #define QUEUE_NAME "acceleration_queue"
 #define FILE_PATH "acceleration_values.txt"
+#define SOCKET_SERVER_IP "127.0.0.1"
+#define SOCKET_SERVER_PORT 5101
 
 typedef struct {
-    float data;
+    float faccelerate;
 } Data;
 
 /**
  * Intervalo normal de acceleração de uma espaçonave que está orbitando a Terra em velocidade constante:
  * -1 a 1 micrômetros por segundo ao quadrado
  */
-
+ 
 const char* get_hostname() {
     const char* hostname = getenv("RABBITMQ_HOSTNAME");
     if (hostname == NULL) {
@@ -30,7 +35,7 @@ const char* get_hostname() {
 
 amqp_connection_state_t connect_rabbitmq() {
     amqp_connection_state_t conn;
-    int attempt = 0; 
+    int attempt = 0;
     const int max_attempts = 5;
 
     while(1) {
@@ -50,17 +55,20 @@ amqp_connection_state_t connect_rabbitmq() {
                 if (!username || !password) {
                     printf("Error: RabbitMQ credentials not set in environment variables\n");
                     amqp_destroy_connection(conn);
-                    exit(1); 
+                    exit(1);
                 }
 
                 amqp_rpc_reply_t login_reply = amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username, password);
                 if(login_reply.reply_type == AMQP_RESPONSE_NORMAL) {
+
                     amqp_channel_open(conn, 1);
+
                     if(amqp_get_rpc_reply(conn).reply_type == AMQP_RESPONSE_NORMAL) {
                         printf("Successfully connected to RabbitMQ server\n");
                         return conn;
                     }
                 }
+
                 printf("Error opening channel\n");
                 amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
             } else {
@@ -74,6 +82,49 @@ amqp_connection_state_t connect_rabbitmq() {
         int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
         printf("Retrying connection in %d seconds...\n", wait_time);
         sleep(wait_time);
+    }
+}
+
+int create_socket() {
+    int attempt = 0;
+    const int max_attempts = 5;
+    int sock;
+
+    while(1) {
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock >= 0) {
+            printf("Socket created successfully\n");
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error creating socket. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
+    }
+}
+
+int connect_to_spaceship_socket_server() {
+    struct sockaddr_in server_addr;
+    int attempt = 0;
+    const int max_attempts = 5;
+
+    int sock = create_socket();
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(SOCKET_SERVER_PORT);
+    server_addr.sin_addr.s_addr = inet_addr(SOCKET_SERVER_IP);
+
+    while(1) {
+        if(connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
+            printf("Connected to spaceship interface via socket\n");
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error connecting to spaceship socket server. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
     }
 }
 
@@ -97,8 +148,24 @@ void publish_acceleration(amqp_connection_state_t *conn, const char *json_messag
         amqp_channel_close(*conn, 1, AMQP_REPLY_SUCCESS);
         amqp_connection_close(*conn, AMQP_REPLY_SUCCESS);
         amqp_destroy_connection(*conn);
-        *conn = connect_rabbitmq();
+        *conn = connect_rabbitmq(); 
         publish_acceleration(conn, json_message);
+    }
+}
+
+void send_to_spaceship_socket_server(int sock, const char *json_message) {
+    int attempt = 0;
+    const int max_attempts = 5;
+
+    while(1) {
+        if(send(sock, json_message, strlen(json_message), 0) != -1) {
+            break;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error sending data to spaceship. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
     }
 }
 
@@ -122,25 +189,33 @@ void read_and_publish_acceleration(const char *file_path) {
 
     char line[256];
     amqp_connection_state_t conn = connect_rabbitmq();
+    int socket_conn = connect_to_spaceship_socket_server();
 
     while(1) {
         while(fgets(line, sizeof(line), file)) {
             line[strcspn(line, "\n")] = 0;
 
-            // Preenche a struct com o valor lido já que é só uma linha
             Data acceleration = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"acceleration\": %.3f}", acceleration.data);
+            sprintf(json_message, "{\"acceleration\": %.3f}", acceleration.faccelerate);
 
-            printf("Sending acceleration: %s\n", line);
+            printf("Sending external fuel accelerate value: %s\n", line);
+            
+            // Publica no RabbitMQ
             publish_acceleration(&conn, json_message);
-            sleep(3);
+            // Envia para a nave espacial via comunicação direta
+            send_to_spaceship_socket_server(socket_conn, json_message);
+            
+            // Pausa por 3s antes de publicar uma nova aceleração
+            sleep(3); 
         }
 
+        // Se chegar ao fim do arquivo, volta ao início dele
         rewind(file);
     }
 
+    // É só para prevenir caso um imprevisto acontença, como o ser loop interrompido manualmente
     fclose(file);
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
@@ -148,7 +223,7 @@ void read_and_publish_acceleration(const char *file_path) {
 }
 
 int main() {
-    setbuf(stdout, NULL);
+    setbuf(stdout, NULL); // Imprimir imediatamente
     read_and_publish_acceleration(FILE_PATH);
     return 0;
 }
