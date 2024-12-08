@@ -1,5 +1,9 @@
 ﻿name: spaceshipmonitoringsystem
 
+networks:
+  spaceship-monitoring-system:
+    driver: bridge
+
 x-common-sensors: &common-sensors
   depends_on:
     rabbitmq:
@@ -8,6 +12,10 @@ x-common-sensors: &common-sensors
     RABBITMQ_HOSTNAME: "rabbitmq"
     RABBITMQ_USER: "guest"
     RABBITMQ_PASSWORD: "guest"
+    SOCKET_SERVER_HOSTNAME: "spaceshipinterface"
+    SOCKET_SERVER_PORT: 5101
+  networks:
+      - spaceship-monitoring-system
 
 x-common: &common
   depends_on:
@@ -17,6 +25,8 @@ x-common: &common
     RabbitMQ__Host: "amqp://rabbitmq:5672"
     RabbitMQ__Username: "guest"
     RabbitMQ__Password: "guest"
+  networks:
+      - spaceship-monitoring-system
 
 services:
   rabbitmq:
@@ -29,19 +39,23 @@ services:
       timeout: 10s
       retries: 5
       start_period: 10s
+    networks:
+      - spaceship-monitoring-system
 
   rabbitmqmanagement:
     image: rabbitmq:4.0-management
     ports:
       - 15672:15672
+    networks:
+      - spaceship-monitoring-system
 
-  houston:
-    build:
-      context: ./Houston
-      dockerfile: Dockerfile
-    ports:
-      - 5008:8080
-    <<: *common
+  # houston:
+  #   build:
+  #     context: ./Houston
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - 5008:8080
+  #   <<: *common
 
   spaceshipinterface:
     build:
@@ -49,7 +63,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - 5236:8080
+      - 5101:5101
     <<: *common
+
 
   analysisservice:
     container_name: analysisservice
@@ -60,19 +76,19 @@ services:
       - 5202:8080
     <<: *common
 
-  notificationsystem:
-    build:
-      context: ./NotificationSystem
-      dockerfile: Dockerfile
-    ports:
-      - 5166:8080
-    <<: *common
+  # notificationsystem:
+  #   build:
+  #     context: ./NotificationSystem
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - 5166:8080
+  #   <<: *common
 
-  acceleration_sensor:
-    build:
-      context: ./Sensors/Acceleration
-      dockerfile: Dockerfile
-    <<: *common-sensors
+  # acceleration_sensor:
+  #   build:
+  #     context: ./Sensors/Acceleration
+  #     dockerfile: Dockerfile
+  #   <<: *common-sensors
 
   externaltemperature_sensor:
     build:
@@ -80,32 +96,32 @@ services:
       dockerfile: Dockerfile
     <<: *common-sensors
 
-  fuelpressure_sensor:
-    build:
-      context: ./Sensors/FuelPressure
-      dockerfile: Dockerfile
-    <<: *common-sensors
+  # fuelpressure_sensor:
+  #   build:
+  #     context: ./Sensors/FuelPressure
+  #     dockerfile: Dockerfile
+  #   <<: *common-sensors
 
-  gyroscope_sensor:
-    build:
-      context: ./Sensors/Gyroscope
-      dockerfile: Dockerfile
-    <<: *common-sensors
+  # gyroscope_sensor:
+  #   build:
+  #     context: ./Sensors/Gyroscope
+  #     dockerfile: Dockerfile
+  #   <<: *common-sensors
 
-  internalpressure_sensor:
-    build:
-      context: ./Sensors/InternalPressure
-      dockerfile: Dockerfile
-    <<: *common-sensors
+  # internalpressure_sensor:
+  #   build:
+  #     context: ./Sensors/InternalPressure
+  #     dockerfile: Dockerfile
+  #   <<: *common-sensors
 
-  internaltemperature_sensor:
-    build:
-      context: ./Sensors/InternalTemperature
-      dockerfile: Dockerfile
-    <<: *common-sensors
+  # internaltemperature_sensor:
+  #   build:
+  #     context: ./Sensors/InternalTemperature
+  #     dockerfile: Dockerfile
+  #   <<: *common-sensors
 
-  radiation_sensor:
-    build:
-      context: ./Sensors/Radiation
-      dockerfile: Dockerfile
-    <<: *common-sensors
+  # radiation_sensor:
+  #   build:
+  #     context: ./Sensors/Radiation
+  #     dockerfile: Dockerfile
+  #   <<: *common-sensors
