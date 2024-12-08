@@ -65,8 +65,6 @@ public class SensorServer {
 
             // Através do número de bytes lidos e do buffer, é possível converter os bytes correspondentes à mensagem de volta para uma string
             var message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-            _logger.LogInformation("Received message: {Message}", message);
-
             await ProcessSensorDataAsync(message);
         }
 
@@ -86,7 +84,7 @@ public class SensorServer {
                 var sensorType = property.Name;
                 var value = property.Value.ToObject<object>();
 
-                _logger.LogInformation("Sensor Type: {SensorType}, Value: {Value}", sensorType, value);
+                _logger.LogInformation("Sensor: {SensorType}, Value: {Value}", sensorType, value);
             }
         }
         catch (Exception ex)
