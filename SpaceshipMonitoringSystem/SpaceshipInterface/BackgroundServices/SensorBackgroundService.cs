@@ -38,12 +38,17 @@ public class SensorBackgroundService : BackgroundService {
                 _ = HandleClientAsync(client, stoppingToken);
             }
         }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Spaceship socket server shutting down...");
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while executing the sensor background service");
         }
         finally
         {
+            await Task.Delay(TimeSpan.FromSeconds(5));
             listener.Stop();
         }
     }
@@ -57,11 +62,16 @@ public class SensorBackgroundService : BackgroundService {
 
         try
         {
-            // Lê até o final da linha (retorna null quando alcança o fim do fluxo ou quando o cliente encerra a conexão)
-            string? message = await reader.ReadLineAsync();
-
-            while (message != null && !stoppingToken.IsCancellationRequested) 
+            while (!stoppingToken.IsCancellationRequested) 
             {
+                // Lê até o final da linha (retorna null quando alcança o fim do fluxo ou quando o cliente encerra a conexão)
+                var message = await reader.ReadLineAsync();
+
+                if (message == null)
+                {
+                    break; // Cliente desconectou, encerra o loop
+                }
+
                 if (string.IsNullOrWhiteSpace(message))
                 {
                     continue; // Ignora mensagens em branco
@@ -69,7 +79,7 @@ public class SensorBackgroundService : BackgroundService {
 
                 await ProcessSensorDataAsync(message);
             }
-        } 
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing sensor data");

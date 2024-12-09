@@ -261,7 +261,7 @@ void read_and_publish_temperature(const char *file_path) {
 
             // Converte valor da struct em um JSON
             char json_message[128];
-            sprintf(json_message, "{\"external_temperature\": %.1f}", temperature.temp);
+            sprintf(json_message, "{\"external_temperature\": %.1f}\n", temperature.temp);
 
             printf("Sending external temperature value: %s\n", line);
             
@@ -270,7 +270,6 @@ void read_and_publish_temperature(const char *file_path) {
             // Tenta enviar para a nave espacial via comunicação direta
             if(send_to_spaceship_socket_server(socket_conn, json_message) == -1) {
                 close(socket_conn);
-                socket_conn = connect_to_spaceship_socket_server();
             }
             
             // Pausa por 3s antes de publicar uma nova temperatura
