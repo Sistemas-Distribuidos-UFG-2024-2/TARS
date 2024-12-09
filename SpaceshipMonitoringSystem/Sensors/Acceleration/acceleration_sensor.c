@@ -221,15 +221,15 @@ void read_and_publish_acceleration(const char *file_path) {
             Data acceleration = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"acceleration\": %.3f}", acceleration.acceleration);
+            sprintf(json_message, "{\"acceleration\": %.3f}\n", acceleration.acceleration);
 
             printf("Sending acceleration value: %s\n", line);
             
             publish_acceleration(&conn, json_message);
             if(send_to_spaceship_socket_server(socket_conn, json_message) == -1) {
                 close(socket_conn);
-                socket_conn = connect_to_spaceship_socket_server();
             }
+            
             sleep(3); 
         }
 
