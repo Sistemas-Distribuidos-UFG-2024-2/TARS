@@ -1,9 +1,5 @@
 ﻿name: spaceshipmonitoringsystem
 
-networks:
-  spaceship-monitoring-system:
-    driver: bridge
-
 x-common-sensors: &common-sensors
   depends_on:
     rabbitmq:
@@ -14,8 +10,6 @@ x-common-sensors: &common-sensors
     RABBITMQ_PASSWORD: "guest"
     SOCKET_SERVER_HOSTNAME: "spaceshipinterface"
     SOCKET_SERVER_PORT: 5101
-  networks:
-      - spaceship-monitoring-system
 
 x-common: &common
   depends_on:
@@ -27,8 +21,6 @@ x-common: &common
     RabbitMQ__Password: "guest"
     MongoDB__ConnectionString: "mongodb://mongodb:27017"
     MongoDB__Database: "sms_db"
-  networks:
-      - spaceship-monitoring-system
 
 services:
   mongo:
@@ -46,15 +38,11 @@ services:
       timeout: 10s
       retries: 5
       start_period: 10s
-    networks:
-      - spaceship-monitoring-system
 
   rabbitmqmanagement:
     image: rabbitmq:4.0-management
     ports:
       - 15672:15672
-    networks:
-      - spaceship-monitoring-system
 
   houston:
     build:
