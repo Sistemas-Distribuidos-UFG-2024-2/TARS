@@ -103,7 +103,16 @@ public class SensorBackgroundService : BackgroundService {
                     var sensorType = property.Key;
                     var value = property.Value;
 
-                    _logger.LogInformation("Value: {Value} [{SensorType}]", value, sensorType);
+                    var line = $"Value: {value} [{sensorType}]";
+
+                    if (!Directory.Exists("./Logs"))
+                    {
+                        Directory.CreateDirectory("./Logs");
+                    }
+
+                    // Salva os dados dos sensores em um arquivo de texto
+                    // Para acessar os arquivos no docker basta dar os seguintes comandos com o container em exec: cd Logs -> cat sensors_data.txt
+                    File.AppendAllText("./Logs/sensors_data.txt", line + Environment.NewLine);
                 }
             }
         }
