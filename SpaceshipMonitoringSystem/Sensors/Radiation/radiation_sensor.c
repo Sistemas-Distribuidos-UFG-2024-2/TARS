@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <signal.h>
 
 #define PORT 5672
 #define QUEUE_NAME "radiation_queue"
@@ -182,11 +183,17 @@ void publish_radiation(amqp_connection_state_t *conn, const char *json_message) 
 }
 
 int send_to_spaceship_socket_server(int sock, const char *json_message) {
-    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
-        return -1; 
+
+    if (sock < 0) {
+        return -1;
     }
+
+    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
+        return -1;
+    } 
+    
     else {
-        return 0; 
+        return 0;
     }
 }
 
@@ -194,6 +201,8 @@ void read_and_publish_radiation(const char *file_path) {
     FILE *file;
     int attempt = 0;
     const int max_attempts = 5;
+
+    signal(SIGPIPE, SIG_IGN);
 
     while(1) {
         file = fopen(file_path, "r");
@@ -219,14 +228,18 @@ void read_and_publish_radiation(const char *file_path) {
             Data radiation = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"radiation\": %.1f}", radiation.rad);
+            sprintf(json_message, "{\"radiation\": %.1f}\n", radiation.rad);
 
             printf("Sending radiation value: %s\n", line);
             publish_radiation(&conn, json_message);
-            if(send_to_spaceship_socket_server(socket_conn, json_message) == -1) {
-                close(socket_conn);
-                socket_conn = connect_to_spaceship_socket_server();
+            
+            if (socket_conn >= 0) {
+                if (send_to_spaceship_socket_server(socket_conn, json_message) == -1) {
+                    close(socket_conn);
+                    socket_conn = -1; 
+                }
             }
+
             sleep(3);
         }
 
@@ -237,7 +250,10 @@ void read_and_publish_radiation(const char *file_path) {
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
     amqp_destroy_connection(conn);
-    close(socket_conn);
+    
+    if(socket_conn >= 0) {
+        close(socket_conn);
+    }
 }
 
 int main() {

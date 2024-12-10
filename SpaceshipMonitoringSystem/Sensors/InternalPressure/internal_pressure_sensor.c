@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <signal.h>
 
 #define PORT 5672
 #define QUEUE_NAME "internal_pressure_queue"
@@ -184,11 +185,17 @@ void publish_internal_pressure(amqp_connection_state_t *conn, const char *json_m
 }
 
 int send_to_spaceship_socket_server(int sock, const char *json_message) {
-    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
-        return -1; 
+
+    if (sock < 0) {
+        return -1;
     }
+
+    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
+        return -1;
+    } 
+    
     else {
-        return 0; 
+        return 0;
     }
 }
 
@@ -196,6 +203,8 @@ void read_and_publish_internal_pressure(const char *file_path) {
     FILE *file;
     int attempt = 0;
     const int max_attempts = 5;
+
+    signal(SIGPIPE, SIG_IGN);
 
     while(1) {
         file = fopen(file_path, "r");
@@ -221,15 +230,19 @@ void read_and_publish_internal_pressure(const char *file_path) {
             Data internal_pressure = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"internal_pressure\": %.1f}", internal_pressure.ipressure);
+            sprintf(json_message, "{\"internal_pressure\": %.1f}\n", internal_pressure.ipressure);
 
-            printf("Sending internal presssure value: %s\n", line);
+            printf("Sending internal pressure value: %s\n", line);
             
             publish_internal_pressure(&conn, json_message);
-            if(send_to_spaceship_socket_server(socket_conn, json_message) == -1) {
-                close(socket_conn);
-                socket_conn = connect_to_spaceship_socket_server();
+            
+            if (socket_conn >= 0) {
+                if (send_to_spaceship_socket_server(socket_conn, json_message) == -1) { 
+                    close(socket_conn);
+                    socket_conn = -1; 
+                }
             }
+
             sleep(3); 
         }
 
@@ -240,7 +253,10 @@ void read_and_publish_internal_pressure(const char *file_path) {
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
     amqp_destroy_connection(conn);
-    close(socket_conn);
+
+    if(socket_conn >= 0) {
+        close(socket_conn);
+    }
 }
 
 int main() {

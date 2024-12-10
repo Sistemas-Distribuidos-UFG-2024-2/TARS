@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <signal.h>
 
 #define PORT 5672
 #define QUEUE_NAME "fuel_pressure_queue"
@@ -185,11 +186,17 @@ void publish_fuel_pressure(amqp_connection_state_t *conn, const char *json_messa
 }
 
 int send_to_spaceship_socket_server(int sock, const char *json_message) {
-    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
-        return -1; 
+
+    if (sock < 0) {
+        return -1;
     }
+
+    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
+        return -1;
+    } 
+    
     else {
-        return 0; 
+        return 0;
     }
 }
 
@@ -197,6 +204,8 @@ void read_and_publish_fuel_pressure(const char *file_path) {
     FILE *file;
     int attempt = 0;
     const int max_attempts = 5;
+
+    signal(SIGPIPE, SIG_IGN);
 
     while(1) {
         file = fopen(file_path, "r");
@@ -222,14 +231,18 @@ void read_and_publish_fuel_pressure(const char *file_path) {
             Data fuel_pressure = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"fuel_pressure\": %.2f}", fuel_pressure.fpressure);
+            sprintf(json_message, "{\"fuel_pressure\": %.2f}\n", fuel_pressure.fpressure);
 
             printf("Sending fuel pressure value: %s\n", line);
             
             publish_fuel_pressure(&conn, json_message);
-            if(send_to_spaceship_socket_server(socket_conn, json_message) == -1) {
-                close(socket_conn);
-                socket_conn = connect_to_spaceship_socket_server();
+            
+            // Se a conexão de socket ainda estiver válida, tenta enviar a mensagem via socket também
+            if (socket_conn >= 0) {
+                if (send_to_spaceship_socket_server(socket_conn, json_message) == -1) { // Envio falhou
+                    close(socket_conn);
+                    socket_conn = -1; // Marca a conexão como inválida, impedindo novas tentativas de envio
+                }
             }
             
             sleep(3); 
@@ -242,7 +255,10 @@ void read_and_publish_fuel_pressure(const char *file_path) {
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
     amqp_destroy_connection(conn);
-    close(socket_conn);
+
+    if(socket_conn >= 0) {
+        close(socket_conn);
+    }
 }
 
 int main() {
