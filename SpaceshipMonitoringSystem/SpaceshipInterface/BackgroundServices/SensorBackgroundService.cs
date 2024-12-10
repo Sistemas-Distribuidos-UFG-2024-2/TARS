@@ -4,27 +4,23 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.IO; 
+using System.IO;
 
 namespace SpaceshipInterface.BackgroundServices;
 
-// Todos os sensores se conectarão ao servidor através da mesma porta
-// Gerencia múltiplas conexões simultâneas usando threads assíncronas
 public class SensorBackgroundService : BackgroundService {
 
     private readonly ILogger<SensorBackgroundService> _logger;
-    private readonly int _port = 5101;
+    private readonly int _port = 5101; // Todos os sensores se conectarão ao servidor através da mesma porta
 
     public SensorBackgroundService (ILogger<SensorBackgroundService> logger)
     {
         _logger = logger;
     }
 
-    // Inicia o servidor e escuta conexões de clientes de forma assíncrona em segundo plano
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) 
     {
 
-        // Cria um listener na porta definida antes para aceitar conexões de qualquer endereço IP
         var listener = new TcpListener(IPAddress.Any, _port);
         listener.Start();
 
@@ -34,7 +30,9 @@ public class SensorBackgroundService : BackgroundService {
         {
             while(!stoppingToken.IsCancellationRequested) 
             {
+                // Aguarda, de forma assíncrona, até que um cliente se conecte ou que o stoppingtoken seja acionado
                 var client = await listener.AcceptTcpClientAsync(stoppingToken);
+                // Continua aceitando novas conexões após delegar a tarefa de lidar com o cliente, clientes processados em paralelo
                 _ = HandleClientAsync(client, stoppingToken);
             }
         }
@@ -48,23 +46,23 @@ public class SensorBackgroundService : BackgroundService {
         }
         finally
         {
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            // É interrompido quando o serviço for encerrado
             listener.Stop();
         }
     }
 
-    // Processa os dados recebidos de um único cliente conectado
+    // Processa os dados recebidos de um cliente específico que esteja conectado
     private async Task HandleClientAsync(TcpClient client, CancellationToken stoppingToken)
     {
 
-        using var stream = client.GetStream(); // Garantir descarte correto do stream
-        using var reader = new StreamReader(stream, Encoding.UTF8); // Leitura direto do stream
+        using var stream = client.GetStream();
+        using var reader = new StreamReader(stream, Encoding.UTF8); // Leitura de dados direto do stream
 
         try
         {
             while (!stoppingToken.IsCancellationRequested) 
             {
-                // Lê até o final da linha (retorna null quando alcança o fim do fluxo ou quando o cliente encerra a conexão)
+                // Lê até o final da linha
                 var message = await reader.ReadLineAsync();
 
                 if (message == null)
@@ -77,7 +75,7 @@ public class SensorBackgroundService : BackgroundService {
                     continue; // Ignora mensagens em branco
                 }
 
-                await ProcessSensorDataAsync(message);
+                await ProcessSensorData(message);
             }
         }
         catch (Exception ex)
@@ -91,11 +89,11 @@ public class SensorBackgroundService : BackgroundService {
     }
 
     // Processa os dados do sensor recebidos na mensagem
-    private Task ProcessSensorDataAsync(string message)
+    private Task ProcessSensorData(string message)
     {
         try
         {
-            // Converte a mensagem JSON em um Dictionary<string, object> => propriedade, valor
+            // Converte a mensagem JSON em um Dictionary<string, object> => <propriedade, valor>
             var json = JsonSerializer.Deserialize<Dictionary<string, object>>(message);
 
             if (json != null) 
@@ -105,7 +103,7 @@ public class SensorBackgroundService : BackgroundService {
                     var sensorType = property.Key;
                     var value = property.Value;
 
-                    _logger.LogInformation("Sensor: {SensorType}, Value: {Value}", sensorType, value);
+                    _logger.LogInformation("Value: {Value} [{SensorType}]", value, sensorType);
                 }
             }
         }

@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <signal.h>
 
 #define PORT 5672
 #define QUEUE_NAME "acceleration_queue"
@@ -184,11 +185,20 @@ void publish_acceleration(amqp_connection_state_t *conn, const char *json_messag
 }
 
 int send_to_spaceship_socket_server(int sock, const char *json_message) {
-    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
+
+    // Socket inválido, não há o que enviar
+    if (sock < 0) {
         return -1;
     }
+
+    // Tentativa de enviar falhou, seja por a conexão ter sido interrompida, pelo destinatário ter fechado a conexão ou outro erro de I/O
+    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
+        return -1;
+    } 
+    
+    // Mensagem enviada com sucesso pelo socket
     else {
-        return 0; 
+        return 0;
     }
 }
 
@@ -196,6 +206,9 @@ void read_and_publish_acceleration(const char *file_path) {
     FILE *file;
     int attempt = 0;
     const int max_attempts = 5;
+
+    // Para ignorar o SIGPIPE causado pela desconexão do socket, quando a conexão for perdida retorna -1
+    signal(SIGPIPE, SIG_IGN);
 
     while(1) {
         file = fopen(file_path, "r");
@@ -226,10 +239,15 @@ void read_and_publish_acceleration(const char *file_path) {
             printf("Sending acceleration value: %s\n", line);
             
             publish_acceleration(&conn, json_message);
-            if(send_to_spaceship_socket_server(socket_conn, json_message) == -1) {
-                close(socket_conn);
-            }
             
+            // Se a conexão de socket ainda estiver válida, tenta enviar a mensagem via socket também
+            if (socket_conn >= 0) {
+                if (send_to_spaceship_socket_server(socket_conn, json_message) == -1) { // Envio falhou
+                    close(socket_conn);
+                    socket_conn = -1; // Marca a conexão como inválida, impedindo novas tentativas de envio
+                }
+            }
+
             sleep(3); 
         }
 
@@ -240,7 +258,10 @@ void read_and_publish_acceleration(const char *file_path) {
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
     amqp_destroy_connection(conn);
-    close(socket_conn);
+    
+    if(socket_conn >= 0) {
+        close(socket_conn);
+    }
 }
 
 int main() {
