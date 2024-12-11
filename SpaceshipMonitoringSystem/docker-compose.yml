@@ -19,7 +19,7 @@ x-common: &common
     RabbitMQ__Host: "amqp://rabbitmq:5672"
     RabbitMQ__Username: "guest"
     RabbitMQ__Password: "guest"
-    MongoDB__ConnectionString: "mongodb://mongodb:27017"
+    MongoDB__ConnectionString: "mongodb://mongo:27017"
     MongoDB__Database: "sms_db"
 
 services:
