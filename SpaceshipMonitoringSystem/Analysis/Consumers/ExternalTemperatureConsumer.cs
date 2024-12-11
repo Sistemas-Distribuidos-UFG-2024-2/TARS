@@ -15,12 +15,12 @@ public class ExternalTemperatureConsumer : IConsumer<ExternalTemperatureMessage>
     private readonly ISensorsRepository<ExternalTemperature> _sensorsRepository;
 
     public ExternalTemperatureConsumer(ILogger<ExternalTemperatureConsumer> logger, IAnalysisService analysisService, 
-        IBasicProducer<AlertMessage> analysisProducer, ISensorsRepository<ExternalTemperature> sensorRepository)
+        IBasicProducer<AlertMessage> analysisProducer, ISensorsRepository<ExternalTemperature> sensorsRepository)
     {
         _logger = logger;
         _analysisService = analysisService;
         _analysisProducer = analysisProducer;
-        _sensorsRepository = sensorRepository;
+        _sensorsRepository = sensorsRepository;
     }
 
     public async Task Consume(ConsumeContext<ExternalTemperatureMessage> context)

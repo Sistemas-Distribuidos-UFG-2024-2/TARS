@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <signal.h>
+#include <time.h>
 
 #define PORT 5672
 #define QUEUE_NAME "internal_temperature_queue"
@@ -227,9 +228,16 @@ void read_and_publish_temperature(const char *file_path) {
             Data temperature = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"internal_temperature\": %.1f}\n", temperature.temp);
+            time_t now = time(NULL);
+            struct tm *tm_info = gmtime(&now);
+            char time_buffer[64];
+            char printf_buffer[64];
+            strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%SZ", tm_info);
+            sprintf(json_message, "{\"internal_temperature\": %.1f, \"timestamp\": \"%s\"}\n", temperature.temp, time_buffer);
             
-            printf("Sending internal temperature value: %s\n", line);
+            strftime(printf_buffer, sizeof(printf_buffer), "%m/%d/%Y %H:%M:%S", tm_info);
+            printf("[%s] Sending internal temperature value: %s\n", printf_buffer, line);
+
             publish_temperature(&conn, json_message);
             
             if (socket_conn >= 0) {

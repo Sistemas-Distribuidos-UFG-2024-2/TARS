@@ -10,8 +10,8 @@ public class MongoDbContext : IMongoDbContext
     }
 
 
-    public IRepository<T> GetRepository<T>(string? collectionName = null) where T : BaseEntity
+    public IRepository<T> GetRepository<T>() where T : BaseEntity
     {
-        return new Repository<T>(_dbConnection, collectionName);
+        return new Repository<T>(_dbConnection);
     }
 }
