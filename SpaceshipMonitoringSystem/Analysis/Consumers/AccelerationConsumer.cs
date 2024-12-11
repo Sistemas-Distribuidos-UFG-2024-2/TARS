@@ -25,13 +25,15 @@ public class AccelerationConsumer : IConsumer<AccelerationMessage>
 
     public async Task Consume(ConsumeContext<AccelerationMessage> context)
     {
-        _logger.LogInformation("Acceleration: {Acceleration} µm", context.Message.Acceleration);
+        // Para ver que o timestamp realmente é do sensor: await Task.Delay(3000);
+
+        _logger.LogInformation("[{Timestamp}] Acceleration: {Acceleration} µm", context.Message.Timestamp, context.Message.Acceleration);
 
         var isValueNormal = _analysisService.IsValueNormal(context.Message.Acceleration, -1.0, 1.0);
         
         var acceleration = new Acceleration
         {
-            Timestamp = DateTime.UtcNow.ToString("o"),
+            Timestamp = context.Message.Timestamp.ToString("o"),
             Name = "Acceleration Sensor",
             Value = context.Message.Acceleration
         };
@@ -39,7 +41,7 @@ public class AccelerationConsumer : IConsumer<AccelerationMessage>
         try
         {
             await _sensorsRepository.Create(acceleration);
-            _logger.LogInformation("Acceleration data saved successfully");
+            _logger.LogInformation("Data saved successfully");
         }
         catch (Exception ex)
         {
