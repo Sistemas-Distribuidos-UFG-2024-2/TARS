@@ -4,6 +4,10 @@
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <signal.h>
 
 #define PORT 5672
 #define QUEUE_NAME "radiation_queue"
@@ -28,6 +32,26 @@ const char* get_hostname() {
     }
 
     return hostname;
+}
+
+const char* get_socket_server_hostname() {
+    const char* hostname = getenv("SOCKET_SERVER_HOSTNAME");
+    if (hostname == NULL) {
+        printf("Error: SOCKET_SERVER_HOSTNAME environment variable not set\n");
+        exit(1);
+    }
+
+    return hostname;
+}
+
+int get_socket_server_port() {
+    const char* port_str = getenv("SOCKET_SERVER_PORT");
+    if (port_str == NULL) {
+        printf("Error: SOCKET_SERVER_PORT environment variable not set\n");
+        exit(1);
+    }
+    
+    return atoi(port_str);
 }
 
 amqp_connection_state_t connect_rabbitmq() {
@@ -78,7 +102,61 @@ amqp_connection_state_t connect_rabbitmq() {
     }
 }
 
-void publish_radiation_value(amqp_connection_state_t *conn, const char *json_message) {
+int create_socket() {
+    int attempt = 0;
+    const int max_attempts = 5;
+    int sock;
+
+    while(1) {
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock >= 0) {
+            printf("Socket created successfully\n");
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error creating socket. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
+    }
+}
+
+int connect_to_spaceship_socket_server() {
+    struct sockaddr_in server_addr; 
+    int attempt = 0;
+    const int max_attempts = 5;
+
+    const char* socket_server_host = get_socket_server_hostname();
+    int socket_server_port = get_socket_server_port();
+
+    struct hostent *ip = gethostbyname(socket_server_host);
+    if (ip == NULL) {
+        printf("Error: Could not resolve hostname %s\n", socket_server_host);
+        exit(1);
+    }
+
+    memset(&server_addr, 0, sizeof(server_addr));
+
+    server_addr.sin_family = AF_INET; 
+    server_addr.sin_port = htons(socket_server_port); 
+    memcpy(&server_addr.sin_addr, ip->h_addr, ip->h_length); 
+
+    int sock = create_socket();
+
+    while(1) {
+        if(connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
+            printf("Connected to spaceship interface via socket\n");
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error connecting to spaceship socket server. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
+    }
+}
+
+void publish_radiation(amqp_connection_state_t *conn, const char *json_message) {
     
     if(*conn == NULL) {
         *conn = connect_rabbitmq();
@@ -90,6 +168,7 @@ void publish_radiation_value(amqp_connection_state_t *conn, const char *json_mes
     amqp_basic_properties_t props;
     props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG;
     props.content_type = amqp_cstring_bytes("application/json");
+    props.delivery_mode = 2;
 
     int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(json_message));
 
@@ -99,14 +178,31 @@ void publish_radiation_value(amqp_connection_state_t *conn, const char *json_mes
         amqp_connection_close(*conn, AMQP_REPLY_SUCCESS);
         amqp_destroy_connection(*conn);
         *conn = connect_rabbitmq();
-        publish_radiation_value(conn, json_message);
+        publish_radiation(conn, json_message);
     }
 }
 
-void read_and_publish_radiation_value(const char *file_path) {
+int send_to_spaceship_socket_server(int sock, const char *json_message) {
+
+    if (sock < 0) {
+        return -1;
+    }
+
+    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
+        return -1;
+    } 
+    
+    else {
+        return 0;
+    }
+}
+
+void read_and_publish_radiation(const char *file_path) {
     FILE *file;
     int attempt = 0;
     const int max_attempts = 5;
+
+    signal(SIGPIPE, SIG_IGN);
 
     while(1) {
         file = fopen(file_path, "r");
@@ -123,6 +219,7 @@ void read_and_publish_radiation_value(const char *file_path) {
 
     char line[256];
     amqp_connection_state_t conn = connect_rabbitmq();
+    int socket_conn = connect_to_spaceship_socket_server();
 
     while(1) {
         while(fgets(line, sizeof(line), file)) {
@@ -131,10 +228,18 @@ void read_and_publish_radiation_value(const char *file_path) {
             Data radiation = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"radiation\": %.1f}", radiation.rad);
+            sprintf(json_message, "{\"radiation\": %.1f}\n", radiation.rad);
 
             printf("Sending radiation value: %s\n", line);
-            publish_radiation_value(&conn, json_message);
+            publish_radiation(&conn, json_message);
+            
+            if (socket_conn >= 0) {
+                if (send_to_spaceship_socket_server(socket_conn, json_message) == -1) {
+                    close(socket_conn);
+                    socket_conn = -1; 
+                }
+            }
+
             sleep(3);
         }
 
@@ -145,10 +250,14 @@ void read_and_publish_radiation_value(const char *file_path) {
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
     amqp_destroy_connection(conn);
+    
+    if(socket_conn >= 0) {
+        close(socket_conn);
+    }
 }
 
 int main() {
     setbuf(stdout, NULL);
-    read_and_publish_radiation_value(FILE_PATH);
+    read_and_publish_radiation(FILE_PATH);
     return 0;
 }

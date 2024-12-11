@@ -4,6 +4,10 @@
 #include <string.h>
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <signal.h>
 
 #define PORT 5672
 #define QUEUE_NAME "gyroscope_queue"
@@ -33,6 +37,26 @@ const char* get_hostname() {
     }
 
     return hostname;
+}
+
+const char* get_socket_server_hostname() {
+    const char* hostname = getenv("SOCKET_SERVER_HOSTNAME");
+    if (hostname == NULL) {
+        printf("Error: SOCKET_SERVER_HOSTNAME environment variable not set\n");
+        exit(1);
+    }
+
+    return hostname;
+}
+
+int get_socket_server_port() {
+    const char* port_str = getenv("SOCKET_SERVER_PORT");
+    if (port_str == NULL) {
+        printf("Error: SOCKET_SERVER_PORT environment variable not set\n");
+        exit(1);
+    }
+    
+    return atoi(port_str);
 }
 
 amqp_connection_state_t connect_rabbitmq() {
@@ -84,6 +108,60 @@ amqp_connection_state_t connect_rabbitmq() {
     }
 }
 
+int create_socket() {
+    int attempt = 0;
+    const int max_attempts = 5;
+    int sock;
+
+    while(1) {
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock >= 0) {
+            printf("Socket created successfully\n");
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error creating socket. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
+    }
+}
+
+int connect_to_spaceship_socket_server() {
+    struct sockaddr_in server_addr; 
+    int attempt = 0;
+    const int max_attempts = 5;
+
+    const char* socket_server_host = get_socket_server_hostname();
+    int socket_server_port = get_socket_server_port();
+
+    struct hostent *ip = gethostbyname(socket_server_host);
+    if (ip == NULL) {
+        printf("Error: Could not resolve hostname %s\n", socket_server_host);
+        exit(1);
+    }
+
+    memset(&server_addr, 0, sizeof(server_addr));
+
+    server_addr.sin_family = AF_INET; 
+    server_addr.sin_port = htons(socket_server_port); 
+    memcpy(&server_addr.sin_addr, ip->h_addr, ip->h_length);
+
+    int sock = create_socket();
+
+    while(1) {
+        if(connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
+            printf("Connected to spaceship interface via socket\n");
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error connecting to spaceship socket server. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
+    }
+}
+
 void publish_gyroscope(amqp_connection_state_t *conn, const char *json_message) {
     
     if(*conn == NULL) {
@@ -96,6 +174,7 @@ void publish_gyroscope(amqp_connection_state_t *conn, const char *json_message) 
     amqp_basic_properties_t props;
     props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG;
     props.content_type = amqp_cstring_bytes("application/json");
+    props.delivery_mode = 2;
 
     int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(json_message));
 
@@ -109,10 +188,27 @@ void publish_gyroscope(amqp_connection_state_t *conn, const char *json_message) 
     }
 }
 
+int send_to_spaceship_socket_server(int sock, const char *json_message) {
+
+    if (sock < 0) {
+        return -1;
+    }
+
+    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
+        return -1;
+    } 
+    
+    else {
+        return 0;
+    }
+}
+
 void read_and_pub_gyroscope(const char *file_path) {
     FILE *file;
     int attempt = 0;
     const int max_attempts = 5;
+
+    signal(SIGPIPE, SIG_IGN);
 
     while(1) {
         file = fopen(file_path, "r");
@@ -130,25 +226,29 @@ void read_and_pub_gyroscope(const char *file_path) {
     const unsigned MAX_LENGTH = 64;
     char buffer[MAX_LENGTH];
     amqp_connection_state_t conn = connect_rabbitmq();
+    int socket_conn = connect_to_spaceship_socket_server();
 
     while(1) {
-        // Função que lê a linha e aloca na string (vetor) "buffer"
+
         while (fgets(buffer, MAX_LENGTH, file)) {
             buffer[strcspn(buffer, "\n")] = 0;
             
-            // Inicializa campos da struct
             Coordinate coordinate = {0.0, 0.0, 0.0};
 
-            // Extrai os valores x, y e z da linha
             if (sscanf(buffer, "x=%f;y=%f;z=%f", &coordinate.x, &coordinate.y, &coordinate.z) == 3) {
                 printf("Sending coordinates: x=%.3f, y=%.3f, z=%.3f\n", coordinate.x, coordinate.y, coordinate.z);
 
-                // Formatar a string JSON manualmente
                 char json_message[128];
-                sprintf(json_message, "{\"x\": %.3f, \"y\": %.3f, \"z\": %.3f}", coordinate.x, coordinate.y, coordinate.z);
+                sprintf(json_message, "{\"x\": %.3f, \"y\": %.3f, \"z\": %.3f}\n", coordinate.x, coordinate.y, coordinate.z);
 
-                // Envia a string JSON
                 publish_gyroscope(&conn, json_message);
+                
+                if (socket_conn >= 0) {
+                    if (send_to_spaceship_socket_server(socket_conn, json_message) == -1) { 
+                        close(socket_conn);
+                        socket_conn = -1;
+                    }
+                }
 
             } else {
                 printf("Error parsing line: %s\n", buffer);
@@ -157,7 +257,6 @@ void read_and_pub_gyroscope(const char *file_path) {
             sleep(4);
         }
 
-        // Se chegar ao fim do arquivo, volta ao início dele
         rewind(file);
     }
 
@@ -165,6 +264,10 @@ void read_and_pub_gyroscope(const char *file_path) {
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
     amqp_destroy_connection(conn);
+
+    if(socket_conn >= 0) {
+        close(socket_conn);
+    }
 }
 
 int main() {

@@ -3,6 +3,7 @@ using SpaceshipInterface.DTO;
 using SpaceshipInterface.Extensions;
 using SpaceshipInterface.Producers;
 using SpaceshipInterface.Utils;
+using SpaceshipInterface.BackgroundServices;
 
 SerilogConfiguration.ConfigureLogger();
 
@@ -12,6 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSerilog();
 builder.Services.AddRabbitMqService(builder.Configuration);
+builder.Services.AddHostedService<SensorBackgroundService>();
 
 var app = builder.Build();
 

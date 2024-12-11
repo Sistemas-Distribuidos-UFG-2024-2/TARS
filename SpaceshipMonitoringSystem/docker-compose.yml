@@ -8,6 +8,8 @@ x-common-sensors: &common-sensors
     RABBITMQ_HOSTNAME: "rabbitmq"
     RABBITMQ_USER: "guest"
     RABBITMQ_PASSWORD: "guest"
+    SOCKET_SERVER_HOSTNAME: "spaceshipinterface"
+    SOCKET_SERVER_PORT: 5101
 
 x-common: &common
   depends_on:
@@ -17,7 +19,7 @@ x-common: &common
     RabbitMQ__Host: "amqp://rabbitmq:5672"
     RabbitMQ__Username: "guest"
     RabbitMQ__Password: "guest"
-    MongoDB__ConnectionString: "mongodb://mongodb:27017"
+    MongoDB__ConnectionString: "mongodb://mongo:27017"
     MongoDB__Database: "sms_db"
 
 services:
@@ -56,6 +58,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - 5236:8080
+      - 5101:5101
     <<: *common
 
   analysisservice:

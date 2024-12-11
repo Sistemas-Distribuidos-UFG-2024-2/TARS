@@ -4,6 +4,10 @@
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <signal.h>
 
 #define PORT 5672
 // Nome da fila em que o sensor publicará as mensagens
@@ -28,6 +32,28 @@ const char* get_hostname() {
     }
 
     return hostname;
+}
+
+// Função para obter o hostname do servidor de sockets
+const char* get_socket_server_hostname() {
+    const char* hostname = getenv("SOCKET_SERVER_HOSTNAME");
+    if (hostname == NULL) {
+        printf("Error: SOCKET_SERVER_HOSTNAME environment variable not set\n");
+        exit(1);
+    }
+
+    return hostname;
+}
+
+// Função para obter a porta do servidor de sockets
+int get_socket_server_port() {
+    const char* port_str = getenv("SOCKET_SERVER_PORT");
+    if (port_str == NULL) {
+        printf("Error: SOCKET_SERVER_PORT environment variable not set\n");
+        exit(1);
+    }
+    
+    return atoi(port_str);
 }
 
 // Função para estabelecer uma conexão com o RabbitMQ através de um socket TCP
@@ -92,6 +118,70 @@ amqp_connection_state_t connect_rabbitmq() {
     }
 }
 
+// Função para criar o socket de comunicação com a nave espacial
+int create_socket() {
+    int attempt = 0;
+    const int max_attempts = 5;
+    int sock;
+
+    // Loop para garantir que o socket seja criado
+    while(1) {
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock >= 0) {
+            printf("Socket created successfully\n");
+            // Retorna o socket criado
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error creating socket. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
+    }
+}
+
+// Função para conectar o socket ao servidor da nave espacial
+int connect_to_spaceship_socket_server() {
+    struct sockaddr_in server_addr; // Estrutura para armazenar os dados do servidor
+    int attempt = 0;
+    const int max_attempts = 5;
+
+    // Obtém hostname e porta do servidor de sockets via variáveis de ambiente
+    const char* socket_server_host = get_socket_server_hostname();
+    int socket_server_port = get_socket_server_port();
+
+    // Resolve o hostname para um endereço IP válido
+    struct hostent *ip = gethostbyname(socket_server_host);
+    if (ip == NULL) {
+        printf("Error: Could not resolve hostname %s\n", socket_server_host);
+        exit(1);
+    }
+
+    // Inicializa a estrutura server_addr com zeros
+    memset(&server_addr, 0, sizeof(server_addr));
+
+    // Preenche os dados do servidor
+    server_addr.sin_family = AF_INET; // IPv4
+    server_addr.sin_port = htons(socket_server_port); // Porta
+    memcpy(&server_addr.sin_addr, ip->h_addr, ip->h_length); // Copia o endereço IP resolvido para o campo sin_addr, o length limita quantos dados serão copiados
+
+    int sock = create_socket();
+
+    // Loop para tentativa de conexão com o servidor
+    while(1) {
+        if(connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0) {
+            printf("Connected to spaceship interface via socket\n");
+            // Retorna o socket conectado com o servidor
+            return sock;
+        } else {
+            attempt++;
+            int wait_time = (attempt < max_attempts) ? attempt * 2 : 10;
+            printf("Error connecting to spaceship socket server. Retrying in %d seconds...\n", wait_time);
+            sleep(wait_time);
+        }
+    }
+}
+
 // Função para enviar a mensagem com a temperatura para a fila do RabbitMQ
 void publish_temperature(amqp_connection_state_t *conn, const char *json_message) {
     
@@ -109,6 +199,7 @@ void publish_temperature(amqp_connection_state_t *conn, const char *json_message
     amqp_basic_properties_t props;
     props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG;
     props.content_type = amqp_cstring_bytes("application/json");
+    props.delivery_mode = 2;
 
     // Tenta publicar a mensagem na fila
     int result = amqp_basic_publish(*conn, 1, amqp_empty_bytes, queue, 0, 0, &props, amqp_cstring_bytes(json_message));
@@ -124,11 +215,33 @@ void publish_temperature(amqp_connection_state_t *conn, const char *json_message
     }
 }
 
+// Tenta enviar a mensagem JSON ao servidor da nave espacial através do socket
+int send_to_spaceship_socket_server(int sock, const char *json_message) {
+
+    // Socket inválido, não há o que enviar
+    if (sock < 0) {
+        return -1;
+    }
+
+    // Tentativa de enviar falhou, seja por a conexão ter sido interrompida, pelo destinatário ter fechado a conexão ou outro erro de I/O
+    if (send(sock, json_message, strlen(json_message), 0) <= 0) {
+        return -1;
+    } 
+    
+    // Mensagem enviada com sucesso pelo socket
+    else {
+        return 0;
+    }
+}
+
 // Função que lê o arquivo e publica os dados no RabbitMQ
 void read_and_publish_temperature(const char *file_path) {
     FILE *file;
     int attempt = 0;
     const int max_attempts = 5;
+
+    // Para ignorar o SIGPIPE causado pela desconexão do socket, quando a conexão for perdida retorna -1
+    signal(SIGPIPE, SIG_IGN);
 
     // Loop para tentar abrir o arquivo até que seja bem-sucedido
     while(1) {
@@ -147,6 +260,7 @@ void read_and_publish_temperature(const char *file_path) {
     // Armazena até 255 caracteres de uma linha
     char line[256];
     amqp_connection_state_t conn = connect_rabbitmq();
+    int socket_conn = connect_to_spaceship_socket_server();
 
     // Loop infinito para ler e publicar continuamente
     while(1) {
@@ -160,11 +274,23 @@ void read_and_publish_temperature(const char *file_path) {
 
             // Converte valor da struct em um JSON
             char json_message[128];
-            sprintf(json_message, "{\"external_temperature\": %.1f}", temperature.temp);
+            sprintf(json_message, "{\"external_temperature\": %.1f}\n", temperature.temp);
 
-            printf("Sending external temperature: %s\n", line);
+            printf("Sending external temperature value: %s\n", line);
+            
+            // Publica no RabbitMQ
             publish_temperature(&conn, json_message);
-            sleep(3); // Publica uma temperatura nova a cada 3s
+            
+            // Se a conexão de socket ainda estiver válida, tenta enviar a mensagem via socket também
+            if (socket_conn >= 0) {
+                if (send_to_spaceship_socket_server(socket_conn, json_message) == -1) { // Envio falhou
+                    close(socket_conn);
+                    socket_conn = -1; // Marca a conexão como inválida, impedindo novas tentativas de envio
+                }
+            }
+            
+            // Pausa por 3s antes de publicar uma nova temperatura
+            sleep(3); 
         }
 
         // Se chegar ao fim do arquivo, volta ao início dele
@@ -176,6 +302,10 @@ void read_and_publish_temperature(const char *file_path) {
     amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS);
     amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
     amqp_destroy_connection(conn);
+    
+    if(socket_conn >= 0) {
+        close(socket_conn);
+    }
 }
 
 int main() {
