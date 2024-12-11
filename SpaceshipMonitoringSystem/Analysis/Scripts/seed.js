@@ -1,7 +1,7 @@
-db.createCollection('Acceleration');
-db.createCollection('ExternalTemperature');
-db.createCollection('FuelPressure');
-db.createCollection('Gyroscope');
-db.createCollection('InternalPressure');
-db.createCollection('InternalTemperature');
-db.createCollection('Radiation');
+db.createCollection('acceleration');
+db.createCollection('external_temperature');
+db.createCollection('fuel_pressure');
+db.createCollection('gyroscope');
+db.createCollection('internal_pressure');
+db.createCollection('internal_temperature');
+db.createCollection('radiation');
