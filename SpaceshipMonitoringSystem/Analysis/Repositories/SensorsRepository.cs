@@ -15,20 +15,20 @@ public class SensorsRepository<T> : ISensorsRepository<T> where T : BaseEntity
         _repository = dbContext.GetRepository<T>();
     }
 
-    public async Task Create(Sensor sensor)
+    public async Task Create(T sensor)
     {
         await _repository.InsertOne(sensor);
     }
 
-    public async Task<List<Sensor>> GetAll()
+    public async Task<IList<T>> GetAll()
     {
-        var filter = Builders<Sensor>.Filter.Empty;
+        var filter = Builders<T>.Filter.Empty;
         return await _repository.Find(filter);
     }
 
-    public async Task<Sensor?> GetById(ObjectId id)
+    public async Task<T?> GetById(ObjectId id)
     {
-        var filter = Builders<Sensor>.Filter.Eq(s => s.Id, id);
+        var filter = Builders<T>.Filter.Eq(s => s.Id, id);
         return await _repository.FindOne(filter);
     }
 }

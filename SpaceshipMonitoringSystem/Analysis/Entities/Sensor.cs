@@ -28,7 +28,7 @@ public class InternalTemperature : Sensor;
 
 public class Radiation : Sensor;
 
-public class Giroscope : BaseEntity
+public class Gyroscope : BaseEntity
 {
      [BsonElement("timestamp")]
     public required string Timestamp { get; set; }
