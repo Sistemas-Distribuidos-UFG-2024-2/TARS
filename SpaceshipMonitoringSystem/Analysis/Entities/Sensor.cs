@@ -30,7 +30,7 @@ public class Radiation : Sensor;
 
 public class Gyroscope : BaseEntity
 {
-     [BsonElement("timestamp")]
+    [BsonElement("timestamp")]
     public required string Timestamp { get; set; }
 
     [BsonElement("name")]
