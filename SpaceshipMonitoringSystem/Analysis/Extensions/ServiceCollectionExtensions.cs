@@ -23,6 +23,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAnalysisService, AnalysisService>();
         services.AddSingleton<ISensorsRepository<Acceleration>, SensorsRepository<Acceleration>>();
         services.AddSingleton<ISensorsRepository<ExternalTemperature>, SensorsRepository<ExternalTemperature>>();
+        services.AddSingleton<ISensorsRepository<FuelPressure>, SensorsRepository<FuelPressure>()>;
+        services.AddSingleton<ISensorsRepository<Gyroscope>, SensorsRepository<Gyroscope>()>;
+        services.AddSingleton<ISensorsRepository<InternalPressure>, SensorsRepository<InternalPressure>()>;
+        services.AddSingleton<ISensorsRepository<InternalTemperature>, SensorsRepository<InternalTemperature>()>;
+        services.AddSingleton<ISensorsRepository<Radiation>, SensorsRepository<Radiation>()>;
     }
     
     public static void AddRabbitMqService(this IServiceCollection services, IConfiguration configuration)

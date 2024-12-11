@@ -28,7 +28,11 @@ public class AccelerationConsumer : IConsumer<AccelerationMessage>
         _logger.LogInformation("Acceleration: {Acceleration} µm", context.Message.Acceleration);
 
         var isValueNormal = _analysisService.IsValueNormal(context.Message.Acceleration, -1.0, 1.0);
-
+        //Sensor acceleration = new Sensor (context.Message.timeStamp,context.Message.name, context.Message.Acceleration)
+        //acceleration. To totalmente perdido nessa parte, eu sei que eu preciso de alguma forma chamar a função de salvar 
+        //no BD e passar o próprio sensor como parâmetro, 
+        //o problema é como puxar o sensor obj pra passar, eu crio ele novamente? to meio perdido ainda, tenh0 que analisar melhor
+        //a logica do codigo
         if (!isValueNormal)
         {
             _logger.LogWarning("Anomaly detected: Acceleration value {Acceleration} µm is out of range",
