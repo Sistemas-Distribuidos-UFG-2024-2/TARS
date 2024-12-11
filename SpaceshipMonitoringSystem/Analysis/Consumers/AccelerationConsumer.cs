@@ -41,7 +41,7 @@ public class AccelerationConsumer : IConsumer<AccelerationMessage>
         try
         {
             await _sensorsRepository.Create(acceleration);
-            _logger.LogInformation("Data saved successfully");
+            _logger.LogInformation("Acceleration data saved successfully");
         }
         catch (Exception ex)
         {

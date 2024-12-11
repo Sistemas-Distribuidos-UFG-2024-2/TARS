@@ -1,6 +1,8 @@
 using Analysis.DTO;
+using Analysis.Entities;
 using Analysis.Services;
 using Analysis.Producers;
+using Analysis.Repositories;
 using MassTransit;
 
 namespace Analysis.Consumers;
@@ -10,19 +12,39 @@ public class ExternalTemperatureConsumer : IConsumer<ExternalTemperatureMessage>
     private readonly ILogger<ExternalTemperatureConsumer> _logger;
     private readonly IAnalysisService _analysisService;
     private readonly IBasicProducer<AlertMessage> _analysisProducer;
+    private readonly ISensorsRepository<ExternalTemperature> _sensorsRepository;
 
-    public ExternalTemperatureConsumer(ILogger<ExternalTemperatureConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> analysisProducer)
+    public ExternalTemperatureConsumer(ILogger<ExternalTemperatureConsumer> logger, IAnalysisService analysisService, 
+        IBasicProducer<AlertMessage> analysisProducer, ISensorsRepository<ExternalTemperature> sensorRepository)
     {
         _logger = logger;
         _analysisService = analysisService;
         _analysisProducer = analysisProducer;
+        _sensorsRepository = sensorRepository;
     }
 
     public async Task Consume(ConsumeContext<ExternalTemperatureMessage> context)
     {
-        _logger.LogInformation("External temperature: {Temp} ºC", context.Message.Externaltemperature);
+        _logger.LogInformation("[{Timestamp}] External temperature: {Temp} ºC", context.Message.Timestamp, context.Message.Externaltemperature);
 
         var isValueNormal = _analysisService.IsValueNormal(context.Message.Externaltemperature, -150.0, 150.0);
+
+        var externalTemperature = new ExternalTemperature
+        {
+            Timestamp = context.Message.Timestamp.ToString("o"),
+            Name = "External Temperature Sensor",
+            Value = context.Message.Externaltemperature
+        };
+
+        try
+        {
+            await _sensorsRepository.Create(externalTemperature);
+            _logger.LogInformation("External temperature data saved successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save external temperature data");
+        }
 
         if (!isValueNormal) 
         {

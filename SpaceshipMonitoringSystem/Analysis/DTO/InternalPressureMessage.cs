@@ -4,4 +4,7 @@ namespace Analysis.DTO;
 
 public record InternalPressureMessage(
     [property: JsonPropertyName("internal_pressure")]
-    double InternalPressure);
+    double InternalPressure,
+    
+    DateTime Timestamp
+);

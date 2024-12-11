@@ -4,4 +4,7 @@ namespace Analysis.DTO;
 
 public record ExternalTemperatureMessage(
     [property: JsonPropertyName("external_temperature")]
-    double Externaltemperature);
+    double Externaltemperature,
+    
+    DateTime Timestamp
+);
