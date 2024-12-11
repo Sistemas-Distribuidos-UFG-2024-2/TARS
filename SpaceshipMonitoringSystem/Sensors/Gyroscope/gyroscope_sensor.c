@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <signal.h>
+#include <time.h>
 
 #define PORT 5672
 #define QUEUE_NAME "gyroscope_queue"
@@ -236,10 +237,18 @@ void read_and_pub_gyroscope(const char *file_path) {
             Coordinate coordinate = {0.0, 0.0, 0.0};
 
             if (sscanf(buffer, "x=%f;y=%f;z=%f", &coordinate.x, &coordinate.y, &coordinate.z) == 3) {
-                printf("Sending coordinates: x=%.3f, y=%.3f, z=%.3f\n", coordinate.x, coordinate.y, coordinate.z);
 
                 char json_message[128];
-                sprintf(json_message, "{\"x\": %.3f, \"y\": %.3f, \"z\": %.3f}\n", coordinate.x, coordinate.y, coordinate.z);
+                time_t now = time(NULL);
+                struct tm *tm_info = gmtime(&now);
+                char time_buffer[64];
+                char printf_buffer[64];
+                
+                strftime(printf_buffer, sizeof(printf_buffer), "%m/%d/%Y %H:%M:%S", tm_info);
+                printf("[%s] Sending coordinates: x=%.3f, y=%.3f, z=%.3f\n", printf_buffer, coordinate.x, coordinate.y, coordinate.z);
+
+                strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%SZ", tm_info);
+                sprintf(json_message, "{\"x\": %.3f, \"y\": %.3f, \"z\": %.3f, \"timestamp\": \"%s\"}\n", coordinate.x, coordinate.y, coordinate.z, time_buffer);
 
                 publish_gyroscope(&conn, json_message);
                 
