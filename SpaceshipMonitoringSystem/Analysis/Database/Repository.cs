@@ -6,9 +6,11 @@ public class Repository<T>: IRepository<T> where T : BaseEntity
 {
     public IMongoCollection<T> Collection { get; }
 
-    public Repository(IMongoDbConnection connection)
+    public Repository(IMongoDbConnection connection, string? collectionName = null)
     {
-        Collection = connection.Collection<T>(typeof(T).Name.ToLower());
+        collectionName ??= typeof(T).Name;
+
+        Collection = connection.Collection<T>(collectionName);
     }
     
     public async Task InsertOne(T entity, InsertOneOptions? options = null, CancellationToken cancellationToken = default)

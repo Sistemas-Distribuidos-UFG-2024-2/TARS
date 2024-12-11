@@ -2,16 +2,17 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using Analysis.Database;
 using Analysis.Entities;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace Analysis.Repositories;
 
-public class SensorsRepository : IRepository
+public class SensorsRepository<T> : ISensorsRepository<T> where T : BaseEntity
 {
-    private readonly IRepository<Sensor> _repository;
+    private readonly IRepository<T> _repository;
 
-    public SensorsRepository(IMongoDbConnection dbContext)
+    public SensorsRepository(IMongoDbContext dbContext)
     {
-        _repository = connection.GetRepository<Sensor>();
+        _repository = dbContext.GetRepository<T>();
     }
 
     public async Task Create(Sensor sensor)

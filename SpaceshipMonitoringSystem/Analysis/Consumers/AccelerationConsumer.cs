@@ -1,6 +1,8 @@
 using Analysis.DTO;
+using Analysis.Entities;
 using Analysis.Services;
 using Analysis.Producers;
+using Analysis.Repositories;
 using MassTransit;
 
 namespace Analysis.Consumers;
@@ -10,12 +12,15 @@ public class AccelerationConsumer : IConsumer<AccelerationMessage>
     private readonly ILogger<AccelerationConsumer> _logger;
     private readonly IAnalysisService _analysisService;
     private readonly IBasicProducer<AlertMessage> _analysisProducer;
+    private readonly ISensorsRepository<Acceleration> _sensorsRepository;
 
-    public AccelerationConsumer(ILogger<AccelerationConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> analysisProducer)
+    public AccelerationConsumer(ILogger<AccelerationConsumer> logger, IAnalysisService analysisService,
+        IBasicProducer<AlertMessage> analysisProducer, ISensorsRepository<Acceleration> sensorsRepository)
     {
         _logger = logger;
         _analysisService = analysisService;
         _analysisProducer = analysisProducer;
+        _sensorsRepository = sensorsRepository;
     }
 
     public async Task Consume(ConsumeContext<AccelerationMessage> context)
@@ -26,7 +31,8 @@ public class AccelerationConsumer : IConsumer<AccelerationMessage>
 
         if (!isValueNormal)
         {
-            _logger.LogWarning("Anomaly detected: Acceleration value {Acceleration} µm is out of range", context.Message.Acceleration);
+            _logger.LogWarning("Anomaly detected: Acceleration value {Acceleration} µm is out of range",
+                context.Message.Acceleration);
 
             var alertMessage = new AlertMessage
             {

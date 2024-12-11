@@ -3,6 +3,8 @@ using Analysis.Database;
 using Analysis.Producers;
 using Analysis.Services;
 using Analysis.DTO;
+using Analysis.Entities;
+using Analysis.Repositories;
 using MassTransit;
 
 namespace Analysis.Extensions;
@@ -19,6 +21,8 @@ public static class ServiceCollectionExtensions
     public static void AddServices(this IServiceCollection services)
     {
         services.AddScoped<IAnalysisService, AnalysisService>();
+        services.AddSingleton<ISensorsRepository<Acceleration>, SensorsRepository<Acceleration>>();
+        services.AddSingleton<ISensorsRepository<ExternalTemperature>, SensorsRepository<ExternalTemperature>>();
     }
     
     public static void AddRabbitMqService(this IServiceCollection services, IConfiguration configuration)

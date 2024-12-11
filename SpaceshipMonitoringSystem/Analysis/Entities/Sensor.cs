@@ -10,8 +10,12 @@ public class Sensor : BaseEntity
     public required string Timestamp { get; set; }
 
     [BsonElement("name")]
-    public required name Name { get; set; }
+    public required string Name { get; set; }
 
     [BsonElement("value")]
     public required double Value { get; set; }
 }
+
+public class Acceleration :Sensor;
+public class ExternalTemperature : Sensor;
+
