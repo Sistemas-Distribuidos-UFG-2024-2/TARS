@@ -1,4 +1,3 @@
-using MongoDB.Bson;
 using MongoDB.Driver;
 using Analysis.Database;
 
@@ -16,17 +15,5 @@ public class SensorsRepository<T> : ISensorsRepository<T> where T : BaseEntity
     public async Task Create(T sensor)
     {
         await _repository.InsertOne(sensor);
-    }
-
-    public async Task<IList<T>> GetAll()
-    {
-        var filter = Builders<T>.Filter.Empty;
-        return await _repository.Find(filter);
-    }
-
-    public async Task<T?> GetById(ObjectId id)
-    {
-        var filter = Builders<T>.Filter.Eq(s => s.Id, id);
-        return await _repository.FindOne(filter);
     }
 }
