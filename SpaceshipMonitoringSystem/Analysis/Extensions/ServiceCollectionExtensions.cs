@@ -17,7 +17,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoDbConnection, MongoDbConnection>();
         services.AddSingleton<IMongoDbContext, MongoDbContext>();
     }
-    
+
     public static void AddServices(this IServiceCollection services)
     {
         services.AddScoped<IAnalysisService, AnalysisService>();
@@ -29,7 +29,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISensorsRepository<InternalTemperature>, SensorsRepository<InternalTemperature>>();
         services.AddSingleton<ISensorsRepository<Radiation>, SensorsRepository<Radiation>>();
     }
-    
+
     public static void AddRabbitMqService(this IServiceCollection services, IConfiguration configuration)
     {
         var section = configuration.GetSection("RabbitMQ");
@@ -60,9 +60,9 @@ public static class ServiceCollectionExtensions
                 factoryConfigurator.UseRawJsonDeserializer();
 
                 // Exchange para a publicação das mensagens de alerta
-                factoryConfigurator.Message<AlertMessage>(configuration =>
+                factoryConfigurator.Message<AlertMessage>(messageTopologyConfigurator =>
                 {
-                    configuration.SetEntityName("alerts-exchange");
+                    messageTopologyConfigurator.SetEntityName("alerts-exchange");
                 });
 
                 factoryConfigurator.ReceiveEndpoint("acceleration_queue",

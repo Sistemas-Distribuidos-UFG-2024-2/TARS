@@ -1,6 +1,5 @@
 using Analysis.Database;
 using MongoDB.Bson;
-using Analysis.Entities;
 
 namespace Analysis.Repositories;
 

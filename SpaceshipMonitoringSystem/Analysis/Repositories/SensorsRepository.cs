@@ -1,8 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Analysis.Database;
-using Analysis.Entities;
-using Microsoft.AspNetCore.Components.Web;
 
 namespace Analysis.Repositories;
 
