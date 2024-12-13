@@ -18,14 +18,17 @@ public static class ServiceCollectionExtensions
 
     public static void AddServices(this IServiceCollection services)
     {
-        services.AddScoped<IPersonsRepository, PersonsRepository>();
-        services.AddScoped<IPersonsService, PersonsService>();
+        
+        services.AddSingleton<IPersonsRepository, PersonsRepository>();
+        services.AddSingleton<IPersonsService, PersonsService>();
+
+        services.AddSingleton<IMailService, MailService>();
     }
-    
+
     public static void AddRabbitMqService(this IServiceCollection services, IConfiguration configuration)
     {
         var section = configuration.GetSection("RabbitMQ");
-        
+
         var rabbitMqHost = section.GetValue<string>("Host")!;
         var username = section.GetValue<string>("Username")!;
         var password = section.GetValue<string>("Password")!;
@@ -33,7 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddMassTransit(configurator =>
         {
             configurator.AddConsumer<AnalysisConsumer>();
-            
+
             configurator.UsingRabbitMq((context, factoryConfigurator) =>
             {
                 factoryConfigurator.Host(new Uri(rabbitMqHost), host =>
@@ -49,10 +52,7 @@ public static class ServiceCollectionExtensions
                 factoryConfigurator.ReceiveEndpoint("notification-alerts-queue", endpoint =>
                 {
                     endpoint.ConfigureConsumer<AnalysisConsumer>(context);
-                    endpoint.Bind("alerts-exchange", x =>
-                    {
-                        x.ExchangeType = "fanout";
-                    });
+                    endpoint.Bind("alerts-exchange", x => { x.ExchangeType = "fanout"; });
                 });
 
                 factoryConfigurator.ConfigureEndpoints(context);
