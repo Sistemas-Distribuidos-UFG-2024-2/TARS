@@ -1,4 +1,4 @@
-### 📌 Integrantes do Grupo TARS:
+### 📌 Integrantes do Grupo TARS
 
 * Hafy Mourad Jacoub de Cuba Kouzak
 * Gustavo Neves Piedade Louzada
@@ -6,7 +6,7 @@
 * João Victor de Paiva Albuquerque
 * Maria Eduarda de Campos Ramos
 
-### ⚙️ [Projeto Final] Spaceship Monitoring System:
+### ⚙️ [Projeto Final] Spaceship Monitoring System
 
 Para rodar o projeto final, acesse a pasta raíz dele e execute o seguinte comando:
 ```
