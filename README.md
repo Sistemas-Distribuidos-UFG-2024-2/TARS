@@ -8,7 +8,7 @@
 
 ### ⚙️ [Projeto Final] Spaceship Monitoring System:
 
-Para rodar o projeto final, basta entrar na pasta raíz do projeto e executar o seguinte comando:
+Para rodar o projeto final, acesse a pasta raíz dele e execute o seguinte comando:
 ```
 docker-compose up --build -d
 ```
