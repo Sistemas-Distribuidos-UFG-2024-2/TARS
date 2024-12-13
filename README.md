@@ -13,3 +13,5 @@ Para rodar o projeto final, acesse a pasta raíz dele e execute o seguinte coman
 docker-compose up --build -d
 ```
 > Obs.: É necessário ter o Docker instalado.
+
+![Arquitetura do Projeto](https://github.com/user-attachments/assets/6b185b1b-df7e-452a-9718-18a35f67d07e)
