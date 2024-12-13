@@ -62,12 +62,13 @@ services:
     <<: *common
 
   analysisservice:
-    container_name: analysisservice
     build:
       context: ./Analysis
       dockerfile: Dockerfile
-    ports:
-      - 5202:8080
+    deploy:
+      mode: replicated
+      replicas: 4
+      endpoint_mode: vip
     <<: *common
 
   notificationsystem:
