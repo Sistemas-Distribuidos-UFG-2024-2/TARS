@@ -41,7 +41,7 @@ public class MailService : IMailService
             mailMessage.Subject = "NEW ALERT!!!";
             mailMessage.Body = $"New alert thrown by {type} sensor!!\n{text}";
 
-            _smtpClient.Send(mailMessage);
+            _smtpClient.SendMailAsync(mailMessage);
         }
         catch (Exception e)
         {
