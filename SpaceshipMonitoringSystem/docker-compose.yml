@@ -71,13 +71,13 @@ services:
       endpoint_mode: vip
     <<: *common
 
-  notificationsystem:
-    build:
-      context: ./NotificationSystem
-      dockerfile: Dockerfile
-    ports:
-      - 5166:8080
-    <<: *common
+  # notificationsystem:
+  #   build:
+  #     context: ./NotificationSystem
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - 5166:8080
+  #   <<: *common
 
   acceleration_sensor:
     build:
