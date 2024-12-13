@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <signal.h>
+#include <time.h>
 
 #define PORT 5672
 #define QUEUE_NAME "internal_pressure_queue"
@@ -230,9 +231,15 @@ void read_and_publish_internal_pressure(const char *file_path) {
             Data internal_pressure = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"internal_pressure\": %.1f}\n", internal_pressure.ipressure);
+             time_t now = time(NULL);
+            struct tm *tm_info = gmtime(&now);
+            char time_buffer[64];
+            char printf_buffer[64];
+            strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%SZ", tm_info);
+            sprintf(json_message, "{\"internal_pressure\": %.1f, \"timestamp\": \"%s\"}\n", internal_pressure.ipressure, time_buffer);
 
-            printf("Sending internal pressure value: %s\n", line);
+            strftime(printf_buffer, sizeof(printf_buffer), "%m/%d/%Y %H:%M:%S", tm_info);
+            printf("[%s] Sending internal pressure value: %s\n", printf_buffer, line);
             
             publish_internal_pressure(&conn, json_message);
             

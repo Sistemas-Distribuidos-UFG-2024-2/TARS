@@ -3,6 +3,8 @@ using Analysis.Database;
 using Analysis.Producers;
 using Analysis.Services;
 using Analysis.DTO;
+using Analysis.Entities;
+using Analysis.Repositories;
 using MassTransit;
 
 namespace Analysis.Extensions;
@@ -15,12 +17,19 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoDbConnection, MongoDbConnection>();
         services.AddSingleton<IMongoDbContext, MongoDbContext>();
     }
-    
+
     public static void AddServices(this IServiceCollection services)
     {
         services.AddScoped<IAnalysisService, AnalysisService>();
+        services.AddSingleton<ISensorsRepository<Acceleration>, SensorsRepository<Acceleration>>();
+        services.AddSingleton<ISensorsRepository<ExternalTemperature>, SensorsRepository<ExternalTemperature>>();
+        services.AddSingleton<ISensorsRepository<FuelPressure>, SensorsRepository<FuelPressure>>();
+        services.AddSingleton<ISensorsRepository<Gyroscope>, SensorsRepository<Gyroscope>>();
+        services.AddSingleton<ISensorsRepository<InternalPressure>, SensorsRepository<InternalPressure>>();
+        services.AddSingleton<ISensorsRepository<InternalTemperature>, SensorsRepository<InternalTemperature>>();
+        services.AddSingleton<ISensorsRepository<Radiation>, SensorsRepository<Radiation>>();
     }
-    
+
     public static void AddRabbitMqService(this IServiceCollection services, IConfiguration configuration)
     {
         var section = configuration.GetSection("RabbitMQ");
@@ -51,9 +60,9 @@ public static class ServiceCollectionExtensions
                 factoryConfigurator.UseRawJsonDeserializer();
 
                 // Exchange para a publicação das mensagens de alerta
-                factoryConfigurator.Message<AlertMessage>(configuration =>
+                factoryConfigurator.Message<AlertMessage>(messageTopologyConfigurator =>
                 {
-                    configuration.SetEntityName("alerts-exchange");
+                    messageTopologyConfigurator.SetEntityName("alerts-exchange");
                 });
 
                 factoryConfigurator.ReceiveEndpoint("acceleration_queue",

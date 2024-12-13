@@ -4,4 +4,7 @@ namespace Analysis.DTO;
 
 public record FuelPressureMessage(
     [property: JsonPropertyName("fuel_pressure")]
-    double FuelPressure);
+    double FuelPressure, 
+    
+    DateTime Timestamp
+);

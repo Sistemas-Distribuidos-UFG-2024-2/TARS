@@ -1,14 +1,27 @@
 using Houston.Consumers;
 using Houston.Database;
+using Houston.Entities;
 using Houston.Producers;
-using Houston.DTO;
+using Houston.Repositories;
+using Houston.Services;
 using MassTransit;
-using MassTransit.RabbitMqTransport;
 
 namespace Houston.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    public static void AddServices(this IServiceCollection services)
+    {
+        services.AddSingleton<ISensorsRepository<Acceleration>, SensorsRepository<Acceleration>>();
+        services.AddSingleton<ISensorsRepository<ExternalTemperature>, SensorsRepository<ExternalTemperature>>();
+        services.AddSingleton<ISensorsRepository<FuelPressure>, SensorsRepository<FuelPressure>>();
+        services.AddSingleton<ISensorsRepository<Gyroscope>, SensorsRepository<Gyroscope>>();
+        services.AddSingleton<ISensorsRepository<InternalPressure>, SensorsRepository<InternalPressure>>();
+        services.AddSingleton<ISensorsRepository<InternalTemperature>, SensorsRepository<InternalTemperature>>();
+        services.AddSingleton<ISensorsRepository<Radiation>, SensorsRepository<Radiation>>();
+        services.AddScoped<ISensorsService, SensorsService>();
+
+    }
     public static void AddMongoDb(this IServiceCollection services)
     {
         services.AddSingleton<IMongoDbConfig, MongoDbConfig>();

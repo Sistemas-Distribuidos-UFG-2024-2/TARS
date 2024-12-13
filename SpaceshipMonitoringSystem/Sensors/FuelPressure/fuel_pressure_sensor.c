@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <signal.h>
+#include <time.h>
 
 #define PORT 5672
 #define QUEUE_NAME "fuel_pressure_queue"
@@ -231,9 +232,15 @@ void read_and_publish_fuel_pressure(const char *file_path) {
             Data fuel_pressure = { atof(line) };
 
             char json_message[128];
-            sprintf(json_message, "{\"fuel_pressure\": %.2f}\n", fuel_pressure.fpressure);
+            time_t now = time(NULL);
+            struct tm *tm_info = gmtime(&now);
+            char time_buffer[64];
+            char printf_buffer[64];
+            strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%SZ", tm_info);
+            sprintf(json_message, "{\"fuel_pressure\": %.2f, \"timestamp\": \"%s\"}\n", fuel_pressure.fpressure, time_buffer);
 
-            printf("Sending fuel pressure value: %s\n", line);
+            strftime(printf_buffer, sizeof(printf_buffer), "%m/%d/%Y %H:%M:%S", tm_info);
+            printf("[%s] Sending fuel pressure value: %s\n", printf_buffer, line);
             
             publish_fuel_pressure(&conn, json_message);
             

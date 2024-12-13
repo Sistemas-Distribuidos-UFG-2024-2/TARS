@@ -98,12 +98,24 @@ public class SensorBackgroundService : BackgroundService {
 
             if (json != null) 
             {
+                // Obtém o timestamp e remove do dicionário para não ser tratado como sensor
+                json.TryGetValue("timestamp", out var timestampObj);
+                string timestamp = timestampObj?.ToString() ?? string.Empty;
+                DateTime parsedTimestamp;
+
+                if (DateTime.TryParse(timestamp, out parsedTimestamp))
+                {
+                    timestamp = parsedTimestamp.ToUniversalTime().ToString("MM/dd/yyyy HH:mm:ss");
+                } 
+
+                json.Remove("timestamp");
+
                 foreach (var property in json) 
                 {
                     var sensorType = property.Key;
                     var value = property.Value;
 
-                    var line = $"Value: {value} [{sensorType}]";
+                    var line = $"[{timestamp} - {sensorType}] Value: {value}";
 
                     if (!Directory.Exists("./Logs"))
                     {

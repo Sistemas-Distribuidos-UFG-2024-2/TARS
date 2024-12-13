@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <signal.h>
+#include <time.h>
 
 #define PORT 5672
 // Nome da fila em que o sensor publicará as mensagens
@@ -272,11 +273,17 @@ void read_and_publish_temperature(const char *file_path) {
             // Preenche struct com valor lido
             Data temperature = { atof(line) };
 
-            // Converte valor da struct em um JSON
+            // Converte valor da struct em um JSON, envia junto o timestamp do sensor
             char json_message[128];
-            sprintf(json_message, "{\"external_temperature\": %.1f}\n", temperature.temp);
+            time_t now = time(NULL);
+            struct tm *tm_info = gmtime(&now);
+            char time_buffer[64];
+            char printf_buffer[64];
+            strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%SZ", tm_info);
+            sprintf(json_message, "{\"external_temperature\": %.1f, \"timestamp\": \"%s\"}\n", temperature.temp, time_buffer);
 
-            printf("Sending external temperature value: %s\n", line);
+            strftime(printf_buffer, sizeof(printf_buffer), "%m/%d/%Y %H:%M:%S", tm_info);
+            printf("[%s] Sending external temperature value: %s\n", printf_buffer, line);
             
             // Publica no RabbitMQ
             publish_temperature(&conn, json_message);

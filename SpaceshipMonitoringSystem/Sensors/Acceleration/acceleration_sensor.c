@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <signal.h>
+#include <time.h>
 
 #define PORT 5672
 #define QUEUE_NAME "acceleration_queue"
@@ -233,10 +234,17 @@ void read_and_publish_acceleration(const char *file_path) {
 
             Data acceleration = { atof(line) };
 
+            // Enviando timestamp do sensor + mensagem
             char json_message[128];
-            sprintf(json_message, "{\"acceleration\": %.3f}\n", acceleration.acceleration);
-
-            printf("Sending acceleration value: %s\n", line);
+            time_t now = time(NULL);
+            struct tm *tm_info = gmtime(&now);
+            char time_buffer[64];
+            char printf_buffer[64];
+            strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%SZ", tm_info);
+            sprintf(json_message, "{\"acceleration\": %.3f, \"timestamp\": \"%s\"}\n", acceleration.acceleration, time_buffer);
+            
+            strftime(printf_buffer, sizeof(printf_buffer), "%m/%d/%Y %H:%M:%S", tm_info);
+            printf("[%s] Sending acceleration value: %s\n", printf_buffer, line);
             
             publish_acceleration(&conn, json_message);
             

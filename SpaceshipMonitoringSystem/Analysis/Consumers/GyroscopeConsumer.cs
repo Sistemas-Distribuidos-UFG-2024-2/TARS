@@ -1,6 +1,8 @@
 using Analysis.DTO;
+using Analysis.Entities;
 using Analysis.Services;
 using Analysis.Producers;
+using Analysis.Repositories;
 using MassTransit;
 
 namespace Analysis.Consumers;
@@ -10,23 +12,46 @@ public class GyroscopeConsumer : IConsumer<GyroscopeMessage>
     private readonly ILogger<GyroscopeConsumer> _logger;
     private readonly IAnalysisService _analysisService;
     private readonly IBasicProducer<AlertMessage> _analysisProducer;
+    private readonly ISensorsRepository<Gyroscope> _sensorsRepository;
 
-    public GyroscopeConsumer(ILogger<GyroscopeConsumer> logger, IAnalysisService analysisService, IBasicProducer<AlertMessage> analysisProducer)
+    public GyroscopeConsumer(ILogger<GyroscopeConsumer> logger, IAnalysisService analysisService, 
+    IBasicProducer<AlertMessage> analysisProducer, ISensorsRepository<Gyroscope> sensorsRepository)
     {
         _logger = logger;
         _analysisService = analysisService;
         _analysisProducer = analysisProducer;
+        _sensorsRepository = sensorsRepository;
     }
 
     public async Task Consume(ConsumeContext<GyroscopeMessage> context)
     {
         _logger.LogInformation
         (
-            "Gyroscope message X: {X} °/s, Y:{Y} °/s, Z: {Z} °/s", 
+            "[{Timestamp}] Gyroscope message X: {X} °/s, Y:{Y} °/s, Z: {Z} °/s", 
+            context.Message.Timestamp,
             context.Message.X, 
             context.Message.Y, 
             context.Message.Z
         );
+
+         var gyroscope = new Gyroscope
+        {
+            Timestamp = context.Message.Timestamp.ToString("o"),
+            Name = "Gyroscope Sensor",
+            X = context.Message.X,
+            Y = context.Message.Y,
+            Z = context.Message.Z
+        };
+
+        try
+        {
+            await _sensorsRepository.Create(gyroscope);
+            _logger.LogInformation("Gyroscope data saved successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save gyroscope data");
+        }
         
         // Os 3 eixos são independentes
         var axes = new Dictionary<string, double>

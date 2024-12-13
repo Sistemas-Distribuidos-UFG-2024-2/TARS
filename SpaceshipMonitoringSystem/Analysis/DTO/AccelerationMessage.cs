@@ -1,3 +1,3 @@
 namespace Analysis.DTO;
 
-public record AccelerationMessage(double Acceleration);
+public record AccelerationMessage(double Acceleration, DateTime Timestamp);
