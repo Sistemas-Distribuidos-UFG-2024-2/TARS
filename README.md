@@ -21,7 +21,7 @@ docker-compose up --build -d
 **Tecnologias e Linguagens utilizadas:**
 * Sensores: Desenvolvidos em C
 * Broker de mensagens: RabbitMQ
-* Serviços de análise de dados, serviço de notificação, serviço de controle central e interface da nave espacial: Desenvolvidos em C#
+* Serviços de análise de dados, de notificação, de controle central e interface da nave espacial: Desenvolvidos em C#
 * Banco de dados: MongoDB
 * Docker
 
