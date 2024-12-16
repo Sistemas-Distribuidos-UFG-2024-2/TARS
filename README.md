@@ -65,4 +65,4 @@ docker-compose up --build -d
 
 <br>
 
-> ⚠️ Mais detalhes sobre o projeto estão na pasta slides deste repositório.
+> ⚠️ Mais detalhes sobre o projeto estão na pasta "slides" deste repositório.
