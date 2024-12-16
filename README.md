@@ -12,7 +12,7 @@ Para rodar o projeto final, acesse a pasta raíz dele e execute o seguinte coman
 ```
 docker-compose up --build -d
 ```
-> Obs.: É necessário ter o Docker instalado.
+> Obs.: É necessário ter o [Docker](https://www.docker.com/) instalado.
 
 ![Arquitetura do Projeto](https://github.com/user-attachments/assets/6b185b1b-df7e-452a-9718-18a35f67d07e)
 
@@ -36,7 +36,7 @@ docker-compose up --build -d
     }
     ```
   
-* Publicar mensagem do Houston para a interface da nave espacial (POST): ```http://localhost:5008/api/spaceship```
+* Enviar mensagem do Houston para a interface da nave espacial (POST): ```http://localhost:5008/api/spaceship```
 
   Exemplo:
   ```
@@ -45,7 +45,7 @@ docker-compose up --build -d
   }
   ```
 
-* Publicar mensagem da interface da nave espacial para o Houston (POST): ```http://localhost:5236/api/houston```
+* Enviar mensagem da interface da nave espacial para o Houston (POST): ```http://localhost:5236/api/houston```
 
   Exemplo:
   ```
